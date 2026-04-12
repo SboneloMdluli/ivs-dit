@@ -1,3 +1,5 @@
+"""YAML load and nested dict merge."""
+
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Mapping
@@ -22,7 +24,7 @@ def merge_config(
     base: Mapping[str, Any],
     overrides: Mapping[str, Any] | None,
 ) -> dict[str, Any]:
-
+    """Deep-merge ``overrides`` into a copy of ``base``."""
     if not overrides:
         return deepcopy(dict(base))
     out = deepcopy(dict(base))

@@ -12,7 +12,7 @@ from implied_volatility_diffusion.synthetic_ivs_generator.heston_iv_surface impo
     lhs_heston_params,
     lhs_heston_params_multi_batch,
 )
-from ivd_config import load_config, merge_config
+from ivs_config import load_config, merge_config
 
 __version__ = "0.1.0"
 

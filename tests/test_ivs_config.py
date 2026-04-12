@@ -1,4 +1,4 @@
-"""Tests for the ``ivd_config`` package."""
+"""Tests for the ``ivs_config`` package."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from ivd_config import load_config, merge_config
+from ivs_config import load_config, merge_config
 
 
 def test_merge_config_deep() -> None:
