@@ -54,7 +54,7 @@ profile = "black"
 line_length = 120
 py_version = "312"
 src_paths = ["src", "tests"]
-known_first_party = ["implied_volatility_diffusion", "ivd_config"]
+known_first_party = ["implied_volatility_diffusion", "ivs_config"]
 
 [tool.ruff]
 line-length = 120

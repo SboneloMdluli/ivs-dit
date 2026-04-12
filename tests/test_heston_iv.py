@@ -22,7 +22,7 @@ from implied_volatility_diffusion.synthetic_ivs_generator.heston_iv_surface impo
     lhs_heston_params,
     lhs_heston_params_multi_batch,
 )
-from ivd_config import load_config
+from ivs_config import load_config
 
 
 def test_heston_cf_at_zero() -> None:
