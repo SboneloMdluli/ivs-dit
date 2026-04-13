@@ -1,10 +1,8 @@
-# Heston + COS → Black–Scholes implied volatility surface generation.
-# Broad ranges + multi-batch LHS + log-uniform (optional) help produce *diverse* IV surfaces.
-
 market:
   spot: 100.0
   dividend_yield: 0.0
 
+# Heston parameter ranges
 heston_ranges:
   v0: [0.02, 0.35]
   rho: [-0.95, 0.95]
@@ -13,48 +11,32 @@ heston_ranges:
   kappa: [0.5, 8.0]
   r: [0.0, 0.08]
 
-grid:
-  moneyness:
-    start_point: 0.6
-    step: 0.1
-    end_point: 1.4
-  tau:
-    start_point: 0.2
-    step: 0.2
-    end_point: 1.0
-    prepend:
-      - 0.05
-
+# Latin Hypercube sampling
 lhs:
-  # Per-batch sample count; total surfaces = n_samples * n_batches
+  # Total surfaces = n_samples * n_batches
   n_samples: 100
   seed: 42
   n_batches: 4
   seed_stride: 10000
-  # Log-uniform on positive params → more coverage of low/high vol & speed scales
   log_uniform:
     - v0
     - sigma
     - theta
     - kappa
 
-cos:
-  n_terms: 1024
-  truncation_L: 14.0
-  short_tau_tau_ref: 0.25
-  n_terms_max: 4096
-
+# Black–Scholes inversion (Jäckel + Newton + Brent)
 implied_vol:
   sigma_lo: 1.0e-4
   sigma_hi: 5.0
   brent_xtol: 1.0e-8
   newton_refinement_steps: 3
   newton_tol: 1.0e-10
-  jackel_iterations: 0
+  jackel_iterations: 2
   vega_floor_scale: 1.0e-14
 
-plot_surface:
-  zlim: [0.05, 0.8]
-  elev: 22
-  azim: -125
-  cmap: turbo
+# Heston-COS (Fang & Oosterlee)
+heston_cos_pricer:
+  n_terms: 1024
+  truncation_L: 14.0
+  short_tau_tau_ref: 0.25
+  n_terms_max: 4096

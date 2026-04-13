@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import math
+from pathlib import Path
 from typing import Any, Mapping
 
 import numpy as np
+
+from ivs_config import merge_config_files
 
 from implied_volatility_diffusion.iv_surface import (
     grid_axes,
@@ -18,6 +21,20 @@ from implied_volatility_diffusion.synthetic_ivs_generator.black_scholes import i
 from implied_volatility_diffusion.synthetic_ivs_generator.heston_cos import heston_call_cos
 
 HESTON_PARAM_ORDER = ("v0", "rho", "sigma", "theta", "kappa", "r")
+
+HESTON_IV_SURFACE_YAML = "heston_iv_surface.yaml"
+IV_SURFACE_GRID_YAML = "iv_surface_grid.yaml"
+
+
+def load_heston_iv_surface_config(config_dir: str | Path) -> dict[str, Any]:
+    d = Path(config_dir)
+    return merge_config_files(d / HESTON_IV_SURFACE_YAML, d / IV_SURFACE_GRID_YAML)
+
+
+def _heston_cos_section(cfg: Mapping[str, Any]) -> Mapping[str, Any]:
+    if "heston_cos_pricer" in cfg:
+        return cfg["heston_cos_pricer"]
+    return cfg.get("cos", {})
 
 
 def lhs_heston_params(
@@ -67,7 +84,7 @@ def implied_vol_surface_for_params(
     m, tau = grid_axes(cfg)
 
     v0, rho, sigma_h, theta, kappa, r = (float(x) for x in params)
-    cos_cfg = cfg.get("cos", {})
+    cos_cfg = _heston_cos_section(cfg)
     n_terms_base = int(cos_cfg.get("n_terms", 1024))
     L = float(cos_cfg.get("truncation_L", 14.0))
     tau_ref = float(cos_cfg.get("short_tau_tau_ref", 0.25))

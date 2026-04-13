@@ -25,7 +25,9 @@ uv run pytest
 
 **Goal:** produce many diverse **Black–Scholes implied volatility** surfaces that are consistent with the **Heston stochastic volatility** model for training and benchmarking.
 
-**Parameter sampling**: `lhs_heston_params` / `lhs_heston_params_multi_batch` sample rows in fixed order `HESTON_PARAM_ORDER`. Ranges come from `heston_ranges` in config; optional `lhs.log_uniform` maps selected positive parameters through log-uniform margins for better coverage of scales.
+**Parameter sampling**: `lhs_heston_params` / `lhs_heston_params_multi_batch` sample rows in fixed order `HESTON_PARAM_ORDER`. Ranges come from `heston_ranges` in `config/heston_iv_surface.yaml`; optional `lhs.log_uniform` maps selected positive parameters through log-uniform margins for better coverage of scales.
+
+**Config layout**: `config/heston_iv_surface.yaml` holds market, Heston ranges, LHS, implied-vol inversion, and `heston_cos_pricer` (COS settings). `config/iv_surface_grid.yaml` holds the shared **`grid`** (moneyness and maturity axes) and **`plot_surface`** (matplotlib defaults). Use `load_heston_iv_surface_config(config_dir)` to merge both into one dict, or `merge_config_files` from `ivs_config` for arbitrary multi-file merges.
 
 **Pricing**: For each `(strike, τ)` on the grid, `heston_call_cos` (Fang & Oosterlee Fourier–cosine method) evaluates the **discounted European call** under Heston. The implementation uses the Heston characteristic function, cumulant-based truncation of the log-spot interval `[a, b]`, and strike-aware widening so short maturities still bracket `log(K)` reliably.
 

@@ -34,3 +34,11 @@ def merge_config(
         else:
             out[key] = deepcopy(val) if isinstance(val, dict) else val
     return out
+
+
+def merge_config_files(*paths: str | Path) -> dict[str, Any]:
+    """Load several YAML files and deep-merge in order (later files override earlier)."""
+    acc: dict[str, Any] = {}
+    for path in paths:
+        acc = merge_config(acc, load_config(path))
+    return acc

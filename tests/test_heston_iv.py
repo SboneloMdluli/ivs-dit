@@ -21,8 +21,8 @@ from implied_volatility_diffusion.synthetic_ivs_generator.heston_iv_surface impo
     implied_vol_surfaces_lhs,
     lhs_heston_params,
     lhs_heston_params_multi_batch,
+    load_heston_iv_surface_config,
 )
-from ivs_config import load_config
 
 
 def test_heston_cf_at_zero() -> None:
@@ -64,7 +64,7 @@ def test_heston_degenerates_to_bs() -> None:
 
 def test_grid_tau_prepend() -> None:
     root = Path(__file__).resolve().parents[1]
-    cfg = load_config(root / "config" / "heston_iv_surface.yaml")
+    cfg = load_heston_iv_surface_config(root / "config")
     _, tau = grid_axes(cfg)
     assert tau[0] < 0.2
     assert abs(float(tau[-1]) - 1.0) < 1e-9
@@ -72,14 +72,14 @@ def test_grid_tau_prepend() -> None:
 
 def test_load_config_and_lhs() -> None:
     root = Path(__file__).resolve().parents[1]
-    cfg = load_config(root / "config" / "heston_iv_surface.yaml")
+    cfg = load_heston_iv_surface_config(root / "config")
     params = lhs_heston_params(cfg, n_samples=5, seed=0)
     assert params.shape == (5, 6)
 
 
 def test_lhs_multi_batch_and_log_uniform() -> None:
     root = Path(__file__).resolve().parents[1]
-    cfg = load_config(root / "config" / "heston_iv_surface.yaml")
+    cfg = load_heston_iv_surface_config(root / "config")
     p1 = lhs_heston_params_multi_batch(cfg, n_samples=8, n_batches=2, seed=1, seed_stride=999)
     assert p1.shape == (16, 6)
     assert np.all(p1[:, 0] > 0) and np.all(p1[:, 3] > 0)  # v0, theta > 0
@@ -88,7 +88,7 @@ def test_lhs_multi_batch_and_log_uniform() -> None:
 @pytest.mark.slow
 def test_lhs_surfaces_smoke() -> None:
     root = Path(__file__).resolve().parents[1]
-    cfg = load_config(root / "config" / "heston_iv_surface.yaml")
+    cfg = load_heston_iv_surface_config(root / "config")
     _, m, tau, iv = implied_vol_surfaces_lhs(cfg, n_samples=1, n_batches=1, seed=0)
     assert iv.shape == (1, len(m), len(tau))
     assert np.all(np.isfinite(iv))
