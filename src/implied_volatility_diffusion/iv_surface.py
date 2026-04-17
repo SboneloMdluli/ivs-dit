@@ -1,3 +1,5 @@
+"""Shared IV surface grid, Latin hypercube sampling, and batch surface assembly."""
+
 from __future__ import annotations
 
 from typing import Any, Callable, Mapping, Protocol, Sequence
@@ -95,11 +97,7 @@ def lhs_params_from_config(
     n_samples: int | None = None,
     seed: int | None = None,
 ) -> np.ndarray:
-    """Latin Hypercube sample over box ranges in ``cfg[ranges_key]``.
-
-    Rows follow ``param_order``. Uses ``cfg['lhs']`` for ``n_samples``, ``seed``,
-    and optional ``log_uniform`` (parameter names mapped with log-uniform margins).
-    """
+    """Latin Hypercube sample over box ranges in ``cfg[ranges_key]``."""
     ranges = cfg[ranges_key]
     lhs_cfg = cfg.get("lhs", {})
     n = int(n_samples if n_samples is not None else lhs_cfg["n_samples"])
@@ -132,10 +130,7 @@ def lhs_params_multi_batch_from_config(
     seed: int | None = None,
     seed_stride: int | None = None,
 ) -> np.ndarray:
-    """Stack several independent LHS designs with different RNG seeds.
-
-    Total draws = n_batches * n_samples (each batch fills the hypercube anew).
-    """
+    """Stack several independent LHS designs with different RNG seeds."""
     lhs_cfg = cfg.get("lhs", {})
     nb = int(n_batches if n_batches is not None else lhs_cfg.get("n_batches", 1))
     stride = int(seed_stride if seed_stride is not None else lhs_cfg.get("seed_stride", 10_000))
@@ -166,23 +161,7 @@ def implied_vol_surface_on_grid(
     to_implied_vol: ImpliedVolInverter,
     implied_vol_options: Mapping[str, Any] | None = None,
 ) -> np.ndarray:
-    """Black–Scholes implied volatility
-
-    Args:
-        moneyness: Values ``K / S`` (strike over spot).
-        tau: Year fractions; non-positive entries yield NaN in the surface.
-        spot: Spot level used to convert moneyness to strike.
-        rate: Risk-free rate passed to ``to_implied_vol``.
-        dividend_yield: Continuous yield passed through.
-        model_call_price: ``(strike, tau) ->`` model **discounted** call price in the
-            same units expected by ``to_implied_vol`` (e.g. Black–Scholes convention).
-        to_implied_vol: Typically a Black–Scholes inverter; extra options go in
-            ``implied_vol_options`` and are forwarded as keyword arguments.
-        implied_vol_options: Optional mapping (e.g. ``sigma_lo``, ``brent_xtol``).
-
-    Returns:
-        Array of shape ``(len(moneyness), len(tau))``.
-    """
+    """Black–Scholes implied volatility on a moneyness × maturity grid."""
     iv_kw = dict(implied_vol_options or {})
     m = np.asarray(moneyness, dtype=float)
     t = np.asarray(tau, dtype=float)
@@ -213,7 +192,7 @@ def implied_vol_surfaces_from_param_matrix(
     *,
     build_surface: Callable[[np.ndarray, Mapping[str, Any]], np.ndarray],
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
- 
+    """Build one IV surface per parameter row using ``build_surface(row, cfg)``."""
     m, tau = grid_axes(cfg)
     iv = np.empty((params.shape[0], m.size, tau.size), dtype=float)
     for n, row in enumerate(params):
