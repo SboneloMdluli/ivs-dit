@@ -20,15 +20,6 @@ uv sync --group notebooks
 uv run pytest
 ```
 
-Fallback with venv + pip:
-
-```bash
-python3 -m venv .venv
-.venv/bin/pip install -e .
-.venv/bin/pip install pytest scipy pyyaml matplotlib
-.venv/bin/python -m pytest -q
-```
-
 ## Configuration
 
 [`config/heston_iv_surface.yaml`](config/heston_iv_surface.yaml) Market, Heston parameter box, Latin Hypercube, Black-Scholes implied-vol inversion, and Heston-COS pricer settings.
@@ -51,9 +42,11 @@ python3 -m venv .venv
 
 **Goal:** generate and calibrate **Black implied-volatility surfaces** under the **SABR lognormal approximation (Hagan 2002)** so the project has a classical baseline before full diffusion/transformer training.
 
+**Interpolation on market data:** step-by-step example in [`docs/sabr_interpolation.md`](docs/sabr_interpolation.md).
+
 **SABR core math** in `src/implied_volatility_diffusion/synthetic_ivs_generator/sabr.py`:
 
-- `sabr_hagan_lognormal_iv` evaluates one implied vol for `(forward, strike, tau)`.
+- `sabr_lognormal_iv` evaluates one implied vol for `(forward, strike, tau)`.
 - `calibrate_sabr_to_implied_vols` calibrates `(alpha, rho, nu)` for one expiry smile with bounded `scipy.optimize.least_squares`.
 
 **Surface assembly** in `src/implied_volatility_diffusion/synthetic_ivs_generator/sabr_iv_surface.py`:
@@ -67,23 +60,6 @@ python3 -m venv .venv
 
 `src/implied_volatility_diffusion/iv_surface.py` is model-agnostic: it builds grid axes from config, samples parameter vectors with Latin Hypercube sampling, and assembles batches of surfaces. Both SABR and Heston reuse this shared grid and sampling pattern.
 
-## Notebook
 
-`notebooks/sabr_synthetic_ivs.ipynb` demonstrates loading SABR config, generating one surface and batches of synthetic surfaces, and plotting a 3D surface and selected smiles.
-
-## Plot example (script mode)
-
-```python
-from implied_volatility_diffusion.synthetic_ivs_generator.sabr_iv_surface import (
-    implied_vol_surface_for_params,
-    plot_sabr_smiles,
-    plot_sabr_surface,
-)
-
-params = [0.2, -0.2, 0.35]  # alpha, rho, nu
-m, tau, iv = implied_vol_surface_for_params(params, cfg)
-fig_surface = plot_sabr_surface(m, tau, iv, cfg=cfg)
-fig_smiles = plot_sabr_smiles(m, tau, iv, smile_taus=[0.2, 0.6, 1.0])
-```
 
 
