@@ -4,8 +4,6 @@ Reference: "A novel pricing method for European options based on Fourier-cosine
 series expansions" (Fang & Oosterlee).
 """
 
-from __future__ import annotations
-
 import math
 
 import numpy as np
@@ -39,12 +37,8 @@ def _heston_cf(
 
     intr = 1.0 - g * exp_mdt
     denom = 1.0 - g
-    ratio = intr / denom
-    ratio = np.where(np.abs(ratio) < 1e-300, 1e-300 + 0j, ratio)
 
-    C = rmq * iu * tau + (kappa * theta / sig2) * (
-        (p - d) * tau - 2.0 * (np.log(intr) - np.log(denom))
-    )
+    C = rmq * iu * tau + (kappa * theta / sig2) * ((p - d) * tau - 2.0 * (np.log(intr) - np.log(denom)))
     D = ((p - d) / sig2) * ((1.0 - exp_mdt) / intr)
     return np.exp(C + D * v0 + iu * np.log(float(spot)))
 
@@ -148,11 +142,7 @@ def _call_cos_coefficients(
     mask = k > 0
     if np.any(mask):
         w = omega[mask]
-        chi = np.real(
-            np.exp(-1j * w * a)
-            * (np.exp((1.0 + 1j * w) * d) - np.exp((1.0 + 1j * w) * c))
-            / (1.0 + 1j * w)
-        )
+        chi = np.real(np.exp(-1j * w * a) * (np.exp((1.0 + 1j * w) * d) - np.exp((1.0 + 1j * w) * c)) / (1.0 + 1j * w))
         psi = strike * (np.sin(w * (d - a)) - np.sin(w * (c - a))) / w
         coeff[mask] = (2.0 / (b - a)) * (chi - psi)
 
@@ -177,14 +167,14 @@ def heston_call_cos(
     if tau <= 0.0:
         return float(max(spot - strike, 0.0))
 
-    a, b, iv_path = _heston_log_moments_truncation(
+    a, b, integrated_var = _heston_log_moments_truncation(
         tau, spot, rate, dividend_yield, kappa, theta, sigma, rho, v0, truncation_L
     )
     a, b = _widen_truncation_for_strike(
         a,
         b,
         strike=strike,
-        integrated_var=iv_path,
+        integrated_var=integrated_var,
         v0=v0,
         tau=tau,
         truncation_L=truncation_L,
