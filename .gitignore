@@ -40,3 +40,14 @@ lightning_logs/
 *.ckpt
 *.pkl
 *.joblib
+
+# raw data and processed data to be ignored and will be accessed via google drive or other storage solutions
+# raw data and processed data to be ignored
+data/raw/*
+!data/raw/.gitkeep
+
+data/processed/*
+!data/processed/.gitkeep
+
+data/optiondx/*
+!data/optiondx/.gitkeep
