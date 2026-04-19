@@ -1,8 +1,8 @@
-# low variance
+# low variance regime
 heston_ranges:
   v0: [0.0025, 0.04]
   theta: [0.0025, 0.04]
-  sigma: [0.08, 0.55]
+  sigma: [0.05, 0.2]
 
 plot_surface:
   zlim: [0.0, 1.0]

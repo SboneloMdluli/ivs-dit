@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "implied-volatility-diffusion"
 version = "0.1.0"
-description = "Implied volatility forecasting with DiT"
+description = "Implied volatility surface forecasting with DiT"
 requires-python = ">=3.10"
 keywords = [
   "implied-volatility",
@@ -22,7 +22,7 @@ dependencies = [
   "matplotlib>=3.7",
   "pyyaml>=6.0",
   "tqdm>=4.66",
-  "py-lets-be-rational>=1.0.1",
+  "py-vollib>=1.0.1",
 ]
 
 [dependency-groups]

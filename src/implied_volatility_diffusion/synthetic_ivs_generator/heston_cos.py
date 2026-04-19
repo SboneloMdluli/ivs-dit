@@ -21,7 +21,24 @@ def _heston_cf(
     rho: float,
     v0: float,
 ) -> np.ndarray:
-    """Risk-neutral Heston characteristic function."""
+    """Risk-neutral Heston characteristic function.
+
+    Args:
+        u: Fourier-cosine frequencies
+        tau: Time to expiry
+        spot: Spot level
+        rate: Risk-free rate
+        dividend_yield: Dividend yield
+        kappa: Heston parameter
+        theta: Heston parameter
+        sigma: Heston parameter
+        rho: Heston parameter
+        v0: Heston parameter
+
+    Returns:
+        Risk-neutral Heston characteristic function
+    Reference: Gatheral, J., 2011. The volatility surface: a practitioner’s guide. John Wiley & Sons.
+    """
     iu = 1j * u
     rmq = rate - dividend_yield
     sig2 = sigma**2
@@ -78,10 +95,12 @@ def _heston_log_moments_truncation(
         + 4.0 * kappa * theta
     )
     c2_formula = (theta / (8.0 * k3)) * (term_bracket + theta * (2.0 * v0 - theta) * tau)
-    # Expected integrated variance is a robust scale for log-spot dispersion; the closed-form
-    # c2 can collapse numerically for some parameter sets and shrink [a, b] too aggressively.
     integrated_var = theta * tau + (v0 - theta) * (1.0 - np.exp(-kappa * tau)) / kappa
-    c2 = max(float(np.real(c2_formula)), float(integrated_var), 1e-16)
+    c2_real = float(np.real(c2_formula))
+    c2_lo = max(float(integrated_var), 1e-16)
+    c2_hi = max(c2_lo * 2.0, c2_lo + 0.25)
+    c2 = min(max(c2_real if np.isfinite(c2_real) else c2_lo, c2_lo), c2_hi)
+    # [a, b] := [c1 - L * sqrt(c2 ), c1 + L * sqrt(c2))]
 
     width = L * np.sqrt(c2)
     a = float(c1 - width)

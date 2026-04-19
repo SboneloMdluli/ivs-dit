@@ -22,6 +22,11 @@ from implied_volatility_diffusion.synthetic_ivs_generator.heston_iv_surface impo
     load_heston_iv_surface_config,
     load_heston_iv_surface_goal_config,
 )
+from implied_volatility_diffusion.synthetic_ivs_generator.heston_simulation import (
+    feller_index,
+    is_feller_satisfied,
+    milstein_step,
+)
 from ivs_config import load_config, merge_config, merge_config_files
 
 __version__ = "0.1.0"
@@ -34,12 +39,14 @@ __all__ = [
     "HestonIvGoal",
     "IV_SURFACE_GRID_YAML",
     "coerce_heston_iv_goal",
+    "feller_index",
     "grid_axes",
     "implied_vol_surface_for_params",
     "implied_vol_surface_on_grid",
     "implied_vol_surfaces_from_param_matrix",
     "implied_vol_surfaces_lhs",
     "implied_vol_surfaces_sequential_lhs",
+    "is_feller_satisfied",
     "lhs_heston_params",
     "lhs_heston_params_multi_batch",
     "lhs_params_from_config",
@@ -49,4 +56,5 @@ __all__ = [
     "load_heston_iv_surface_goal_config",
     "merge_config",
     "merge_config_files",
+    "milstein_step",
 ]
