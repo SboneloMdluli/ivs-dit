@@ -1,3 +1,8 @@
+from implied_volatility_diffusion.arbitrage import (
+    ArbitrageReport,
+    check_iv_surface_arbitrage,
+    check_iv_surfaces_arbitrage,
+)
 from implied_volatility_diffusion.iv_surface import (
     grid_axes,
     implied_vol_surface_on_grid,
@@ -33,11 +38,14 @@ __version__ = "0.1.0"
 
 __all__ = [
     "__version__",
+    "ArbitrageReport",
     "HESTON_GOAL_YAML",
     "HESTON_IV_SURFACE_YAML",
     "HESTON_PARAM_ORDER",
     "HestonIvGoal",
     "IV_SURFACE_GRID_YAML",
+    "check_iv_surface_arbitrage",
+    "check_iv_surfaces_arbitrage",
     "coerce_heston_iv_goal",
     "feller_index",
     "grid_axes",

@@ -1,7 +1,9 @@
-# skew
 heston_ranges:
-  rho: [-0.99, -0.35]
-  sigma: [0.3, 1]
+  rho: [-0.99, -0.5]
+  sigma: [0.4, 1.0]
+  theta: [0.2, 0.5]
+  kappa: [2.0, 3.0]
+  v0: [0.1, 0.4]
 
 grid:
   moneyness:

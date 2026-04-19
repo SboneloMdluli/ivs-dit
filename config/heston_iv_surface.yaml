@@ -44,8 +44,6 @@ heston_cos_pricer:
   n_terms: 1024
   truncation_L: 14.0
   short_tau_tau_ref: 0.25
-  # Bumped from 4096 because the wider time-to-maturity range (up to T=2) makes the
-  # cumulant truncation interval grow, so more COS terms are needed for accuracy.
   n_terms_max: 1040
 
 # Sequences of IV surfaces along a risk-neutral Heston path

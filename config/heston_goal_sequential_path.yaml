@@ -1,6 +1,3 @@
-# Overlay: longer risk-neutral path so spot/variance evolve over more calendar time.
-# Keeps dt = 1 trading day; increase n_steps to lengthen the simulated window.
-
 sequential_ivs:
   n_steps: 32
   dt: 0.003968253968253968

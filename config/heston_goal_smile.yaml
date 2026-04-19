@@ -1,6 +1,10 @@
+# smile
 heston_ranges:
-  rho: [-0.42, 0.42]
-  sigma: [0.35, 1]
+  rho: [-0.15, 0.15]
+  sigma: [0.5, 1.0]
+  theta: [0.2, 0.5]
+  kappa: [2.0, 3.0]
+  v0: [0.1, 0.4]
 
 grid:
   moneyness:
