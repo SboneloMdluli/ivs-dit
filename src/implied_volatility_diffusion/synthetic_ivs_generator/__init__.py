@@ -1,1 +1,1 @@
-"""Black–Scholes and Heston COS utilities for synthetic implied-volatility surfaces."""
+"""Synthetic IV surface generators for Heston-COS and SABR baselines."""
