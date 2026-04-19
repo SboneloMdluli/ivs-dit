@@ -1,4 +1,4 @@
-from __future__ import annotations
+"""Utility functions for implied volatility surface generation."""
 
 from typing import Any, Callable, Mapping, Protocol, Sequence
 
@@ -59,7 +59,7 @@ def _grid_axis(spec: Mapping[str, Any]) -> np.ndarray:
 
 
 def grid_axes(cfg: Mapping[str, Any]) -> tuple[np.ndarray, np.ndarray]:
-    """Moneyness and maturity axes from ``cfg['grid']``."""
+    """Moneyness and maturity axes from cfg['grid']."""
     grid = cfg["grid"]
     return _grid_axis(grid["moneyness"]), _grid_axis(grid["tau"])
 
@@ -78,9 +78,7 @@ def _lhs_unit_to_params(
         col = u[:, i]
         if name in log_uniform_names:
             if lo <= 0.0 or hi <= 0.0:
-                raise ValueError(
-                    f"log_uniform for '{name}' requires strictly positive range bounds"
-                )
+                raise ValueError(f"log_uniform for '{name}' requires strictly positive range bounds")
             out[:, i] = np.exp(np.log(lo) + col * (np.log(hi) - np.log(lo)))
         else:
             out[:, i] = lo + col * (hi - lo)
@@ -95,10 +93,10 @@ def lhs_params_from_config(
     n_samples: int | None = None,
     seed: int | None = None,
 ) -> np.ndarray:
-    """Latin Hypercube sample over box ranges in ``cfg[ranges_key]``.
+    """Latin Hypercube sample over box ranges in cfg[ranges_key].
 
-    Rows follow ``param_order``. Uses ``cfg['lhs']`` for ``n_samples``, ``seed``,
-    and optional ``log_uniform`` (parameter names mapped with log-uniform margins).
+    Rows follow param_order. Uses cfg['lhs'] for n_samples, seed,
+    and optional log_uniform (parameter names mapped with log-uniform margins).
     """
     ranges = cfg[ranges_key]
     lhs_cfg = cfg.get("lhs", {})
@@ -166,22 +164,22 @@ def implied_vol_surface_on_grid(
     to_implied_vol: ImpliedVolInverter,
     implied_vol_options: Mapping[str, Any] | None = None,
 ) -> np.ndarray:
-    """Black–Scholes implied volatility
+    """Black–Scholes implied volatility.
 
     Args:
-        moneyness: Values ``K / S`` (strike over spot).
+        moneyness: Values K / S (strike over spot).
         tau: Year fractions; non-positive entries yield NaN in the surface.
         spot: Spot level used to convert moneyness to strike.
-        rate: Risk-free rate passed to ``to_implied_vol``.
+        rate: Risk-free rate passed to to_implied_vol.
         dividend_yield: Continuous yield passed through.
-        model_call_price: ``(strike, tau) ->`` model **discounted** call price in the
-            same units expected by ``to_implied_vol`` (e.g. Black–Scholes convention).
+        model_call_price: (strike, tau) -> model **discounted** call price in the
+            same units expected by to_implied_vol.
         to_implied_vol: Typically a Black–Scholes inverter; extra options go in
-            ``implied_vol_options`` and are forwarded as keyword arguments.
-        implied_vol_options: Optional mapping (e.g. ``sigma_lo``, ``brent_xtol``).
+            implied_vol_options and are forwarded as keyword arguments.
+        implied_vol_options: Optional mapping
 
     Returns:
-        Array of shape ``(len(moneyness), len(tau))``.
+        Array of shape (len(moneyness), len(tau)).
     """
     iv_kw = dict(implied_vol_options or {})
     m = np.asarray(moneyness, dtype=float)
@@ -213,7 +211,16 @@ def implied_vol_surfaces_from_param_matrix(
     *,
     build_surface: Callable[[np.ndarray, Mapping[str, Any]], np.ndarray],
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
- 
+    """Build implied volatility surfaces from a parameter matrix.
+
+    Args:
+        params: Parameter matrix
+        cfg: Configuration
+        build_surface: Function to build a single surface
+
+    Returns:
+        Tuple of parameter matrix, moneyness axis, maturity axis, and implied volatility surface
+    """
     m, tau = grid_axes(cfg)
     iv = np.empty((params.shape[0], m.size, tau.size), dtype=float)
     for n, row in enumerate(params):

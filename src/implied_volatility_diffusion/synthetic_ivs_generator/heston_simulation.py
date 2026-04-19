@@ -1,14 +1,13 @@
-"""Time-discretization schemes for the risk-neutral Heston model simulation.
+"""Full-truncation Milstein discretization for the risk-neutral Heston model.
 
 References:
 - Gatheral, J., 2011. The volatility surface: a practitioner's guide. John Wiley & Sons.
-- L. Andersen, "Efficient Simulation of the Heston Stochastic Volatility Model",
-  Journal of Computational Finance, 2008.
+- Efficient Simulation of the Heston Stochastic Volatility Model
 """
 
 import math
-
 import numpy as np
+
 
 def is_feller_satisfied(kappa: float, theta: float, sigma_v: float, *, eps: float = 0.0) -> bool:
     """Return ``True`` when ``2 kappa theta >= sigma_v^2 + eps`` (Feller condition).
@@ -44,10 +43,9 @@ def milstein_step(
     rho: float,
     rng: np.random.Generator,
 ) -> tuple[float, float]:
-    """One Milstein step for the joint ``(S, v)``
+    """One Milstein step for the joint ``(S, v)`` Heston system.
 
     Variance update (full-truncation Milstein):
-
     """
     dt_f = float(dt)
     if dt_f <= 0.0:
@@ -64,21 +62,3 @@ def milstein_step(
 
     log_s_next = math.log(float(s)) + (float(r) - float(q) - 0.5 * v_pos) * dt_f + sqrt_v * sqrt_dt * z_s
     return float(math.exp(log_s_next)), float(v_next)
-
-
-def heston_path_step(
-    s: float,
-    v: float,
-    dt: float,
-    r: float,
-    q: float,
-    kappa: float,
-    theta: float,
-    sigma_v: float,
-    rho: float,
-    rng: np.random.Generator,
-) -> tuple[float, float]:
-    """Dispatch one ``(spot, variance)`` step under the requested scheme."""
-  
-    return milstein_step(s, v, dt, r, q, kappa, theta, sigma_v, rho, rng)
-

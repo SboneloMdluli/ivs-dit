@@ -1,9 +1,8 @@
-# Overlay: high varianc
-
+# high varianc
 heston_ranges:
-  v0: [0.08, 0.45]
-  theta: [0.08, 0.45]
-  sigma: [0.45, 1.25]
+  v0: [0.2, 0.45]
+  theta: [0.2, 0.45]
+  sigma: [0.3, 0.5]
 
 heston_cos_pricer:
   n_terms_max: 6144

@@ -1,7 +1,10 @@
+"""Preset Heston IV surface YAML overlay."""
+
 from enum import Enum
 
+
 class HestonIvGoal(str, Enum):
-    """Preset Heston IV surface YAML overlay; value is the stem suffix ``heston_goal_{value}.yaml``."""
+    """Preset Heston IV surface YAML overlay; value is the stem suffix heston_goal_{value}.yaml."""
 
     LOW_VOL = "low_vol"
     HIGH_VOL = "high_vol"
@@ -15,10 +18,7 @@ def heston_goal_overlay_filename(goal: HestonIvGoal) -> str:
     return f"heston_goal_{goal.value}.yaml"
 
 
-# Preset overlays (merged after base + grid). Values are filenames under ``config_dir``.
-HESTON_GOAL_YAML: dict[HestonIvGoal, str] = {
-    goal: heston_goal_overlay_filename(goal) for goal in HestonIvGoal
-}
+HESTON_GOAL_YAML: dict[HestonIvGoal, str] = {goal: heston_goal_overlay_filename(goal) for goal in HestonIvGoal}
 
 
 def coerce_heston_iv_goal(goal: HestonIvGoal | str) -> HestonIvGoal:

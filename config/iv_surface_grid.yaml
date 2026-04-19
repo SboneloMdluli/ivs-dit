@@ -1,20 +1,17 @@
-# Moneyness / maturity grid and matplotlib defaults for implied-volatility surface plots.
-
+# Moneyness / maturity grid
 grid:
   moneyness:
-    start_point: 0.5
+    # K / S0 in [0.5, 2.5]
     step: 0.1
-    end_point: 1.5
+    end_point: 2.5
   tau:
-    start_point: 0.2
+    # Time to maturity in [0.1, 2.0] year fractions.
+    start_point: 0.1
     step: 0.2
-    end_point: 1.0
-    prepend:
-      - 0.05
+    end_point: 2.0
 
 plot_surface:
   zlim: [0, 1]
-  # 3D view: similar to finance IV surface figures (elevated front corner).
   elev: 30
   azim: -42
   cmap: turbo

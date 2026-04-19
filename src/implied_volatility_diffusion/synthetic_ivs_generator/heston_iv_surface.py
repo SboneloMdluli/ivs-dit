@@ -1,14 +1,10 @@
 """Heston COS + LHS configuration helpers (wraps generic :mod:`iv_surface` utilities)."""
 
-from __future__ import annotations
-
 import math
 from pathlib import Path
 from typing import Any, Mapping
 
 import numpy as np
-
-from ivs_config import merge_config_files
 
 from implied_volatility_diffusion.iv_surface import (
     grid_axes,
@@ -17,21 +13,41 @@ from implied_volatility_diffusion.iv_surface import (
     lhs_params_from_config,
     lhs_params_multi_batch_from_config,
 )
-from implied_volatility_diffusion.synthetic_ivs_generator.black_scholes import implied_volatility
 from implied_volatility_diffusion.synthetic_ivs_generator.heston_cos import heston_call_cos
 from implied_volatility_diffusion.synthetic_ivs_generator.heston_iv_goals import (
     HESTON_GOAL_YAML,
     HestonIvGoal,
     coerce_heston_iv_goal,
 )
+from implied_volatility_diffusion.synthetic_ivs_generator.heston_simulation import milstein_step
+from implied_volatility_diffusion.synthetic_ivs_generator.implied_vol_solver import implied_volatility
+from ivs_config import merge_config_files
 
 HESTON_PARAM_ORDER = ("v0", "rho", "sigma", "theta", "kappa", "r")
+_SIGMA_COL = HESTON_PARAM_ORDER.index("sigma")
+_THETA_COL = HESTON_PARAM_ORDER.index("theta")
+_KAPPA_COL = HESTON_PARAM_ORDER.index("kappa")
 
 HESTON_IV_SURFACE_YAML = "heston_iv_surface.yaml"
 IV_SURFACE_GRID_YAML = "iv_surface_grid.yaml"
 
 
+def _clip_sigma_to_feller(params: np.ndarray, *, eps: float = 0.0) -> np.ndarray:
+    """Per row, clip ``sigma_v`` so that ``2 kappa theta >= sigma_v^2 + eps`` (Feller).
+
+    ``kappa`` and ``theta`` are preserved. Always applied to LHS draws so simulated
+    variance paths cannot vanish in continuous time.
+    """
+    out = np.array(params, dtype=float, copy=True)
+    two_kt = 2.0 * out[:, _KAPPA_COL] * out[:, _THETA_COL]
+    feller_strict = two_kt - float(eps)
+    sigma_max = np.sqrt(np.where(feller_strict > 0.0, feller_strict, two_kt))
+    out[:, _SIGMA_COL] = np.minimum(out[:, _SIGMA_COL], sigma_max)
+    return out
+
+
 def load_heston_iv_surface_config(config_dir: str | Path) -> dict[str, Any]:
+    """Load base Heston + grid YAML."""
     d = Path(config_dir)
     return merge_config_files(d / HESTON_IV_SURFACE_YAML, d / IV_SURFACE_GRID_YAML)
 
@@ -43,7 +59,7 @@ def load_heston_iv_surface_goal_config(
     """Load base Heston + grid YAML, then merge a **goal** overlay (low vol, skew, etc.).
 
     ``goal`` is a :class:`HestonIvGoal` member, or the same string as its ``value`` (e.g.
-    ``\"low_vol\"``). Later keys in the merge win on conflicts; the overlay only sets
+    "low_vol"). Later keys in the merge win on conflicts; the overlay only sets
     ranges and related keys for that scenario.
     """
     g = coerce_heston_iv_goal(goal)
@@ -67,14 +83,20 @@ def lhs_heston_params(
     n_samples: int | None = None,
     seed: int | None = None,
 ) -> np.ndarray:
-    """Latin Hypercube sample of Heston parameters; shape ``(n, 6)`` in ``HESTON_PARAM_ORDER``."""
-    return lhs_params_from_config(
+    """Latin Hypercube sample of Heston parameters; shape ``(n, 6)`` in ``HESTON_PARAM_ORDER``.
+
+    ``sigma_v`` is always clipped to the Feller-feasible upper bound
+    ``sqrt(max(0, 2*kappa*theta - lhs.feller_eps))`` (default ``feller_eps = 0``).
+    """
+    params = lhs_params_from_config(
         cfg,
         param_order=HESTON_PARAM_ORDER,
         ranges_key="heston_ranges",
         n_samples=n_samples,
         seed=seed,
     )
+    eps = float((cfg.get("lhs") or {}).get("feller_eps", 0.0))
+    return _clip_sigma_to_feller(params, eps=eps)
 
 
 def lhs_heston_params_multi_batch(
@@ -85,8 +107,8 @@ def lhs_heston_params_multi_batch(
     seed: int | None = None,
     seed_stride: int | None = None,
 ) -> np.ndarray:
-    """Several independent LHS batches over ``cfg['heston_ranges']``."""
-    return lhs_params_multi_batch_from_config(
+    """Several independent LHS batches over ``cfg['heston_ranges']`` (Feller-clipped)."""
+    params = lhs_params_multi_batch_from_config(
         cfg,
         param_order=HESTON_PARAM_ORDER,
         ranges_key="heston_ranges",
@@ -95,6 +117,8 @@ def lhs_heston_params_multi_batch(
         seed=seed,
         seed_stride=seed_stride,
     )
+    eps = float((cfg.get("lhs") or {}).get("feller_eps", 0.0))
+    return _clip_sigma_to_feller(params, eps=eps)
 
 
 def implied_vol_surface_for_params(
@@ -126,18 +150,22 @@ def implied_vol_surface_for_params(
     iv_cfg = cfg.get("implied_vol", {})
     iv_opts = {
         "sigma_lo": float(iv_cfg.get("sigma_lo", 1e-4)),
-        "sigma_hi": float(iv_cfg.get("sigma_hi", 1.0)),
-        "xtol": float(iv_cfg.get("brent_xtol", 1e-8)),
-        "newton_refinement_steps": int(
-            iv_cfg.get("newton_refinement_steps", iv_cfg.get("newton_max_iter", 3))
-        ),
+        "sigma_hi": float(iv_cfg.get("sigma_hi", 10.0)),
+        "newton_refinement_steps": int(iv_cfg.get("newton_refinement_steps", 3)),
         "newton_tol": float(iv_cfg.get("newton_tol", 1e-10)),
-        "jackel_iterations": int(iv_cfg.get("jackel_iterations", 0)),
+        "brent_xtol": float(iv_cfg.get("brent_xtol", 1e-8)),
         "vega_floor_scale": float(iv_cfg.get("vega_floor_scale", 1e-14)),
+        "intrinsic_nudge_scale": float(iv_cfg.get("intrinsic_nudge_scale", 1e-10)),
     }
 
     def model_call_price(strike: float, ttm: float) -> float:
-        scale = max(1.0, math.sqrt(tau_ref / max(ttm, 1e-12)))
+        # Scale n_terms up at both short tau (CF still oscillates fast) and long tau
+        # (truncation interval grows like sqrt(tau), so we need proportionally more terms
+        # to keep the COS frequency resolution constant).
+        ttm_safe = max(float(ttm), 1e-12)
+        short_scale = math.sqrt(tau_ref / ttm_safe)
+        long_scale = math.sqrt(ttm_safe / tau_ref)
+        scale = max(1.0, short_scale, long_scale)
         n_terms = int(min(n_terms_max, round(n_terms_base * scale)))
         return float(
             heston_call_cos(
@@ -177,32 +205,6 @@ def implied_vol_surface_for_params(
                     iv[:, j] = iv[:, j_ref]
 
     return m, tau, iv
-
-
-def _heston_spot_variance_euler_step(
-    s: float,
-    v: float,
-    dt: float,
-    r: float,
-    q: float,
-    kappa: float,
-    theta: float,
-    sigma_v: float,
-    rho: float,
-    rng: np.random.Generator,
-) -> tuple[float, float]:
-    """Full-truncation Euler step for risk-neutral Heston (log-price formulation on spot level)."""
-    z1, z2i = rng.standard_normal(2)
-    rho_c = max(-1.0, min(1.0, float(rho)))
-    z2 = rho_c * z1 + math.sqrt(max(1e-18, 1.0 - rho_c * rho_c)) * z2i
-    sqrt_dt = math.sqrt(float(dt))
-    v_pos = max(float(v), 0.0)
-    sqrt_v = math.sqrt(v_pos)
-    v_next = v_pos + kappa * (theta - v_pos) * float(dt) + sigma_v * sqrt_v * sqrt_dt * z2
-    v_next = max(v_next, 0.0)
-    s_next = float(s) + (r - q) * float(s) * float(dt) + sqrt_v * float(s) * sqrt_dt * z1
-    s_next = max(s_next, 1e-12)
-    return s_next, v_next
 
 
 def implied_vol_surfaces_lhs(
@@ -246,18 +248,13 @@ def implied_vol_surfaces_sequential_lhs(
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Latin-hypercube Heston draws and a short **sequence** of IV surfaces per draw.
 
-    For each parameter row, spot and variance follow a risk-neutral Heston Euler path
-    (correlated Brownian increments). At each time index the surface is built with
-    :func:`implied_vol_surface_for_params` using the current ``(spot, variance)`` and
-    the same ``(kappa, theta, sigma, rho, r)`` as in the COS pricer.
+    For each parameter row, spot and variance follow a risk-neutral Heston path
+    integrated with a full-truncation **Milstein** step
 
     Shape of the implied-vol array is ``(n_paths, n_steps, n_moneyness, n_tau)``.
 
-    Config (optional) under ``sequential_ivs``:
-
-    - ``n_steps``: number of surfaces per path (default ``8``).
-    - ``dt``: year fraction between snapshots (default ``1/252``).
-    - ``path_seed_stride``: offset between path RNG seeds (default ``100_000``).
+    Config (optional) under ``sequential_ivs``: ``n_steps``, ``dt``, ``path_seed_stride``.
+    Feller is enforced at LHS sample time.
     """
     seq_cfg = cfg.get("sequential_ivs") or {}
     n_st = int(n_steps if n_steps is not None else seq_cfg.get("n_steps", 8))
@@ -299,7 +296,7 @@ def implied_vol_surfaces_sequential_lhs(
             _, _, surf = implied_vol_surface_for_params(row, cfg, spot=s_cur, inst_var=v_cur)
             iv[p, k, :, :] = surf
             if k < n_st - 1:
-                s_cur, v_cur = _heston_spot_variance_euler_step(
+                s_cur, v_cur = milstein_step(
                     s_cur,
                     v_cur,
                     dt_eff,

@@ -1,7 +1,7 @@
 # skew
 heston_ranges:
   rho: [-0.99, -0.35]
-  sigma: [0.45, 1]
+  sigma: [0.3, 1]
 
 grid:
   moneyness:
