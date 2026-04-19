@@ -26,7 +26,44 @@ uv run pytest
 [`config/sabr_iv_surface.yaml`](config/sabr_iv_surface.yaml) Market assumptions, SABR parameter box, Latin Hypercube settings, and shared moneyness and maturity grid.
 [`config/iv_surface_grid.yaml`](config/iv_surface_grid.yaml) Shared grid and plot surface settings.
 
-## Heston-COS synthetic implied-volatility generator
+## Heston-COS synthetic implied-volatility generator  
+## Option Data Pipeline
+
+### Objective:
+
+This pipeline constructs a multi-year historical option chain data from raw option chain files, then standardizes the schema and produces a clean dataset suitable for:
+- IVS construction
+- Smoothing and interpolation
+- Model training and validation
+
+### Data Source:
+
+- Raw option chain files: `data/raw/optiondx/` (txt files, source: `www.optionsdx.com`)
+- 5 years of monthly data (60 files)
+
+Preprocessed datasets (raw + cleaned) are available here:
+
+https://drive.google.com/drive/folders/1RyOj4Ylcqgo5ItAcTGJWsiuKayZ-qvYI?usp=drive_link
+
+### Pipeline Overview:
+1. **Data Ingestion**: 
+- Load raw TXT files into pandas DataFrames
+- Clean column names and normalize schema
+- Parse date fields
+- Robust numeric coercion across all option columns (handles vendor inconsistencies)
+2. **Quote Normalization**: Separate call and puts, each row becomes a single option type
+3. **Feature Engineering**: Calculate key derived features including:
+- Time to maturity $\tau$ - DTE / 365
+- log Moneyness $k$ - log(K/S)
+- Mid price: (bid + ask) / 2
+- Spread and relative spread
+- Total implied variance: $w=\tau \sigma^2$
+- smoothing weights: liquidity weight; vega weight; combined weight.
+
+4. **Data Cleaning**: Apply filters to keep positive bid/ask; valid IV; positive time to maturity; ask >= bid; reaonable spread (to be refined in future work)
+5. **Output**: 
+- Combined raw dataset (9.3 million rows): `data/raw/raw.parquet`. with minimal processing.
+- Cleaned dataset (15.4 million rows): `data/processed/cleaned.parquet`. initially cleaned data and engineered features for modeling.
 
 **Goal:** produce many diverse **Black-Scholes implied-volatility** surfaces that are consistent with the **Heston stochastic-volatility** model for training and benchmarking.
 

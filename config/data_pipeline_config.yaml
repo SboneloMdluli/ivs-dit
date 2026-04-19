@@ -1,0 +1,8 @@
+paths:
+  source_dir: data/optiondx
+  raw_output_path: data/raw/raw.parquet
+  processed_output_path: data/processed/processed.parquet
+
+run:
+  limit_files: null
+  batch_size: 6
