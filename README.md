@@ -85,7 +85,7 @@ https://drive.google.com/drive/folders/1RyOj4Ylcqgo5ItAcTGJWsiuKayZ-qvYI?usp=dri
 
 **Goal:** generate and calibrate **Black implied-volatility surfaces** under the **SABR lognormal approximation (Hagan 2002)** so the project has a classical baseline before full diffusion/transformer training.
 
-**Interpolation on market data:** step-by-step example in [`docs/sabr_interpolation.md`](docs/sabr_interpolation.md).
+**Interpolation on market data:** step-by-step example in [`docs/sabr_interpolation.md`](docs/sabr_interpolation.md). Historic cleaned chains: `src/implied_volatility_diffusion/data/historical_sabr_interpolation.py` calibrates SABR per expiry and fills a dense IV grid; optionally compare to the kernel smoother when you use the same evaluation mesh.
 
 **SABR core math** in `src/implied_volatility_diffusion/synthetic_ivs_generator/sabr.py`:
 
