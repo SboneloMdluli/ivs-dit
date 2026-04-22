@@ -1,10 +1,10 @@
 """No-arbitrage diagnostics for Black-Scholes IV surfaces (torch-backed)."""
 
-from implied_volatility_diffusion.arbitrage_checks.report import ArbitrageReport
 from implied_volatility_diffusion.arbitrage_checks.checks import (
     check_iv_surface_arbitrage,
     check_iv_surfaces_arbitrage,
 )
+from implied_volatility_diffusion.arbitrage_checks.report import ArbitrageReport
 
 __all__ = [
     "ArbitrageReport",

@@ -57,8 +57,7 @@ def check_iv_surface_arbitrage(
     t_t = np.asarray(tau, dtype=float).reshape(-1)
     if iv_t.shape != (m_t.size, t_t.size):
         raise ValueError(
-            f"iv shape {tuple(iv_t.shape)} does not match "
-            f"(len(moneyness)={int(m_t.size)}, len(tau)={int(t_t.size)})"
+            f"iv shape {tuple(iv_t.shape)} does not match (len(moneyness)={int(m_t.size)}, len(tau)={int(t_t.size)})"
         )
     if bool(np.any(np.diff(m_t) <= 0.0)):
         raise ValueError("moneyness must be strictly increasing")

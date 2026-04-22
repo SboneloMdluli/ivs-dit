@@ -8,6 +8,7 @@ import numpy as np
 import QuantLib as ql
 from scipy import optimize
 
+
 def forward_from_spot(spot: float, tau: float, r: float, q: float) -> float:
     """Risk-neutral forward for tenor ``tau``."""
     return float(spot * np.exp((r - q) * tau))

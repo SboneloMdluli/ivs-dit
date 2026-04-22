@@ -19,7 +19,6 @@ import numpy as np
 from py_vollib.black_scholes_merton import black_scholes_merton as _bsm_price
 from py_vollib.black_scholes_merton.greeks.analytical import vega as _bsm_vega_pct
 
-
 _VEGA_PER_UNIT_SCALE = 100.0  # py_vollib returns vega per 1% vol; rescale to per 1.0.
 
 
@@ -42,7 +41,9 @@ def _vega_scalar(s: float, k: float, t: float, r: float, sig: float, q: float) -
         return 0.0
     if t <= 0.0 or sig <= 0.0 or s <= 0.0 or k <= 0.0:
         return 0.0
-    return float(_bsm_vega_pct("c", float(s), float(k), float(t), float(r), float(sig), float(q))) * _VEGA_PER_UNIT_SCALE
+    return (
+        float(_bsm_vega_pct("c", float(s), float(k), float(t), float(r), float(sig), float(q))) * _VEGA_PER_UNIT_SCALE
+    )
 
 
 _price_ufunc = np.frompyfunc(_price_scalar, 6, 1)
@@ -98,6 +99,4 @@ def bs_call_price_scalar(
     dividend_yield: float = 0.0,
 ) -> float:
     """Scalar convenience used by the arbitrage code path."""
-    return _price_scalar(
-        float(spot), float(strike), float(tau), float(rate), float(vol), float(dividend_yield)
-    )
+    return _price_scalar(float(spot), float(strike), float(tau), float(rate), float(vol), float(dividend_yield))

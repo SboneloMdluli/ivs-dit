@@ -152,8 +152,6 @@ def implied_volatility(
     return float(min(max(sigma, sigma_lo), sigma_hi))
 
 
-
-
 def implied_vol_from_prices(
     prices: np.ndarray | float,
     *,
