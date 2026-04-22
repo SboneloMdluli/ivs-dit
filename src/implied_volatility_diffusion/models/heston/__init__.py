@@ -2,7 +2,6 @@
 
 The implementation is organised as:
 
-* :mod:`.characteristic` — risk-neutral characteristic function.
 * :mod:`.cos` — Fang-Oosterlee COS pricer (vectorized over strikes).
 * :mod:`.simulation` — scalar full-truncation Milstein discretization.
 * :mod:`.model` — :class:`HestonModel` bundling the above behind
