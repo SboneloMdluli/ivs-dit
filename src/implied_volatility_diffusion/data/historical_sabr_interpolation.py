@@ -19,7 +19,7 @@ import pandas as pd
 from implied_volatility_diffusion.data.historical_data_smoothing_interpolation import (
     filter_day_for_surface,
 )
-from implied_volatility_diffusion.synthetic_ivs_generator.sabr_iv_surface import (
+from implied_volatility_diffusion.models.sabr.calibration import (
     calibrate_params_for_expiries,
     implied_vol_surface_from_calibrated_slices,
 )
@@ -27,14 +27,14 @@ from implied_volatility_diffusion.synthetic_ivs_generator.sabr_iv_surface import
 
 @dataclass(frozen=True)
 class HistoricalSABRResult:
-    """Outputs from :func:`build_historical_sabr_surface`."""
+    """Output container for historical SABR surface calibration."""
 
     surface: np.ndarray
     day_sub: pd.DataFrame
     expiry_taus: np.ndarray
     calibrated_params: np.ndarray
     spot: float
-    calibration_details: list[Any]
+    calibration_details: list[dict[str, object]]
 
 
 def _spot_from_day(day_sub: pd.DataFrame, spot_col: str) -> float:
