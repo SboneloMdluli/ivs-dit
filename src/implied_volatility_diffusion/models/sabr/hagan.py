@@ -68,9 +68,13 @@ def sabr_hagan_lognormal_iv_array(
     nu: float,
 ) -> np.ndarray:
     """Element-wise Hagan IV for broadcastable ``forward``, ``strike``, ``tau``."""
-    f, k, t = np.broadcast_arrays(np.asarray(forward, dtype=float), np.asarray(strike, dtype=float), np.asarray(tau, dtype=float))
+    f, k, t = np.broadcast_arrays(
+        np.asarray(forward, dtype=float), np.asarray(strike, dtype=float), np.asarray(tau, dtype=float)
+    )
     out = np.empty(f.shape, dtype=float)
-    it = np.nditer([f, k, t, out], flags=["multi_index"], op_flags=[["readonly"], ["readonly"], ["readonly"], ["writeonly"]])
+    it = np.nditer(
+        [f, k, t, out], flags=["multi_index"], op_flags=[["readonly"], ["readonly"], ["readonly"], ["writeonly"]]
+    )
     for fv, kv, tv, ov in it:
         ov[...] = sabr_hagan_lognormal_iv(float(fv), float(kv), float(tv), alpha, beta, rho, nu)
     return out

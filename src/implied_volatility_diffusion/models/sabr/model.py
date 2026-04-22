@@ -11,7 +11,6 @@ import QuantLib as ql
 from implied_volatility_diffusion.models.base import register_model
 from implied_volatility_diffusion.pricing.black_scholes import bs_call_price
 
-
 SABR_PARAM_ORDER: tuple[str, ...] = ("alpha", "rho", "nu")
 
 
@@ -114,7 +113,7 @@ class SabrModel:
         m = np.asarray(moneyness, dtype=float).reshape(-1)
         t = np.asarray(tau, dtype=float).reshape(-1)
         spot_f = float(np.asarray(spot, dtype=float).item())
-        strikes = (m.reshape(1, -1, 1) * spot_f)
+        strikes = m.reshape(1, -1, 1) * spot_f
         tau_b = t.reshape(1, 1, -1)
         return bs_call_price(spot_f, strikes, tau_b, rate, iv, dividend_yield)
 

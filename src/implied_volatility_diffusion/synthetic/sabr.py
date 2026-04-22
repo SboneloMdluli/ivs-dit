@@ -19,7 +19,6 @@ from implied_volatility_diffusion.synthetic.guards import (
 )
 from implied_volatility_diffusion.synthetic.surface import build_surfaces
 
-
 _ALPHA_COL = SABR_PARAM_ORDER.index("alpha")
 _RHO_COL = SABR_PARAM_ORDER.index("rho")
 _NU_COL = SABR_PARAM_ORDER.index("nu")

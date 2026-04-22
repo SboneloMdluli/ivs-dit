@@ -6,7 +6,6 @@ from typing import Any, Callable, Iterable, Mapping
 
 from implied_volatility_diffusion.core.protocols import VolModel
 
-
 ModelFactory = Callable[[Mapping[str, Any]], VolModel]
 
 _REGISTRY: dict[str, ModelFactory] = {}

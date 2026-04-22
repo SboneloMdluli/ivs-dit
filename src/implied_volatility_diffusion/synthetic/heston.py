@@ -23,8 +23,6 @@ from implied_volatility_diffusion.synthetic.guards import (
     GuardSettings,
     guarded_build_surfaces,
 )
-from implied_volatility_diffusion.synthetic.surface import build_surfaces
-
 
 HESTON_IV_SURFACE_YAML = "heston_iv_surface.yaml"
 IV_SURFACE_GRID_YAML = "iv_surface_grid.yaml"
@@ -119,11 +117,7 @@ def implied_vol_surface_for_heston_params(
         cfg,
         np.asarray(params, dtype=float).reshape(1, -1),
         spot_override=spot,
-        inst_var_override=(
-            None
-            if inst_var is None
-            else np.array([float(inst_var)], dtype=float)
-        ),
+        inst_var_override=(None if inst_var is None else np.array([float(inst_var)], dtype=float)),
         guard=guard,
     )
     return sb.moneyness, sb.tau, sb.iv[0]

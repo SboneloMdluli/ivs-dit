@@ -42,7 +42,6 @@ from implied_volatility_diffusion.core.protocols import VolModel
 from implied_volatility_diffusion.core.types import SurfaceBatch
 from implied_volatility_diffusion.synthetic.surface import build_surfaces
 
-
 GuardPolicy = Literal["none", "warn", "repair", "filter", "raise"]
 _ALLOWED_POLICIES: tuple[GuardPolicy, ...] = ("none", "warn", "repair", "filter", "raise")
 
@@ -71,9 +70,7 @@ class GuardSettings:
         section = cfg.get("arbitrage_guard") or {}
         policy_raw = str(section.get("policy", "repair")).lower()
         if policy_raw not in _ALLOWED_POLICIES:
-            raise ValueError(
-                f"arbitrage_guard.policy must be one of {_ALLOWED_POLICIES}; got {policy_raw!r}"
-            )
+            raise ValueError(f"arbitrage_guard.policy must be one of {_ALLOWED_POLICIES}; got {policy_raw!r}")
         return cls(
             policy=policy_raw,  # type: ignore[arg-type]
             tol=float(section.get("tol", 1e-8)),
@@ -107,9 +104,7 @@ def repair_calendar_monotone(iv: np.ndarray, tau: np.ndarray) -> np.ndarray:
     iv_arr = np.asarray(iv, dtype=float)
     t = np.asarray(tau, dtype=float).reshape(-1)
     if iv_arr.shape[-1] != t.size:
-        raise ValueError(
-            f"iv last axis ({iv_arr.shape[-1]}) must match len(tau)={t.size}"
-        )
+        raise ValueError(f"iv last axis ({iv_arr.shape[-1]}) must match len(tau)={t.size}")
     if t.size < 2:
         return iv_arr.copy()
 
@@ -175,9 +170,7 @@ def enforce_arbitrage(
 
     iv = batch.iv
     if iv.ndim < 3:
-        raise ValueError(
-            f"enforce_arbitrage expects iv with shape (..., M, T); got {iv.shape}"
-        )
+        raise ValueError(f"enforce_arbitrage expects iv with shape (..., M, T); got {iv.shape}")
 
     if settings.policy in ("repair", "filter") and settings.repair_before_filter:
         iv_rep = repair_calendar_monotone(iv, batch.tau)
@@ -215,8 +208,7 @@ def enforce_arbitrage(
     # Only support filtering along the single leading axis (the LHS-sample axis).
     if len(leading) != 1:
         raise ValueError(
-            "filter policy only supports iv tensors with a single leading "
-            f"sample axis; got leading shape {leading}"
+            f"filter policy only supports iv tensors with a single leading sample axis; got leading shape {leading}"
         )
     idx = np.flatnonzero(keep_mask)
     n_dropped = int(batch.iv.shape[0] - idx.size)

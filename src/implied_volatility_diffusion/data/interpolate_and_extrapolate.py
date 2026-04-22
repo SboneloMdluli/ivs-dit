@@ -82,9 +82,7 @@ def build_historical_sabr_surface(
     Returns:
         :class:`HistoricalSabrSurface`.
     """
-    day_sub = filter_day_for_surface(
-        day_df, k_range=k_range, tau_range=tau_range, iv_range=iv_range
-    )
+    day_sub = filter_day_for_surface(day_df, k_range=k_range, tau_range=tau_range, iv_range=iv_range)
     if day_sub.empty:
         raise ValueError("no rows survive filter_day_for_surface for this day")
     if "underlying_last" not in day_sub.columns:
@@ -111,8 +109,7 @@ def build_historical_sabr_surface(
 
     if len(expiry_taus) < 2:
         raise ValueError(
-            "need at least two expiries with >= "
-            f"{min_points_per_expiry} valid points to build a SABR surface"
+            f"need at least two expiries with >= {min_points_per_expiry} valid points to build a SABR surface"
         )
 
     expiry_tau_arr = np.asarray(expiry_taus, dtype=float)

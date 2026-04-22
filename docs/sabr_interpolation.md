@@ -116,6 +116,41 @@ iv_interp = np.array(
 )
 ```
 
+## Historic cleaned data (SABR interpolation)
+
+### Where the data is cleaned
+
+Cleaning happens in the EOD pipeline **`src/implied_volatility_diffusion/data/data_pipeline.py`**: each raw file is processed with `process_file`, which ends with **`clean_data`** (filters on valid `mid`, `tau`, `iv`, positive `strike` / `underlying_last`, bid–ask consistency, and optional `rel_spread`). Concatenated batches are written to **`data/processed/processed.parquet`** by default (`processed_output_path` in `config/data_pipeline_config.yaml`). From the repository root, with the package on `PYTHONPATH` or installed editable, run **`python -m implied_volatility_diffusion.data.data_pipeline`** to rebuild that parquet (or call `build_dataset` with the same paths).
+
+### Loading cleaned data
+
+Read the processed parquet with **`load_cleaned_data`** from `historical_data_smoothing_interpolation.py` (expects at least `quote_date`, `k`, `tau`, `iv`, `vega`, `strike`, `underlying_last`, and related columns). Slice one valuation day with `df[df["quote_date"] == sample_date]`.
+
+### SABR interpolation on that day
+
+For one `quote_date`, **`historical_sabr_interpolation.py`** applies the same SABR workflow as above: **`filter_day_for_surface`**, group quotes by **`expire_date`** (or rounded **`tau`** if expiry is missing), **`calibrate_params_for_expiries`**, then **`implied_vol_surface_from_calibrated_slices`** on your chosen dense **`k_grid` × `tau_grid`** (with `k = log(K/S)` and `m = exp(k)` internally). The evaluation grid is **independent** of any kernel smoother; pick resolution and ranges for the SABR surface you want.
+
+```python
+import numpy as np
+import pandas as pd
+
+from implied_volatility_diffusion.data.historical_data_smoothing_interpolation import load_cleaned_data
+from implied_volatility_diffusion.data.historical_sabr_interpolation import build_historical_sabr_surface
+
+df = load_cleaned_data("data/processed/processed.parquet")
+day_df = df[df["quote_date"] == pd.Timestamp("2021-12-14")].copy()
+
+k_grid = np.linspace(-0.2, 0.2, 41)
+tau_grid = np.linspace(0.05, 1.0, 24)
+
+sabr_out = build_historical_sabr_surface(day_df, k_grid, tau_grid, r=0.03, q=0.0, beta=0.5)
+Z_sabr = sabr_out.surface
+```
+
+### Optional: compare to a kernel surface
+
+If you also build a kernel surface on the **same** `(k_grid, tau_grid)` (see `build_kernel_surface` in `historical_data_smoothing_interpolation.py`), you can summarize overlap with **`compare_kernel_sabr_surfaces(Z_kernel, Z_sabr)`** (`rmse`, finite counts). Different grids per method are fine if you only need side-by-side plots—interpolate or align off-line before a scalar RMSE.
+
 ## Practical notes
 
 - **Quote quality:** remove bad prints, align call/put conventions, and ensure strikes are positive before calibration.

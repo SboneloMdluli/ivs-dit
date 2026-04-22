@@ -9,9 +9,8 @@ from typing import Any, Mapping
 import numpy as np
 
 from implied_volatility_diffusion.models.base import register_model
-from implied_volatility_diffusion.pricing.implied_vol import implied_vol_from_prices
 from implied_volatility_diffusion.models.heston.cos import heston_call_cos
-
+from implied_volatility_diffusion.pricing.implied_vol import implied_vol_from_prices
 
 HESTON_PARAM_ORDER: tuple[str, ...] = ("v0", "rho", "sigma", "theta", "kappa", "r")
 
@@ -76,8 +75,6 @@ class HestonModel:
     def from_config(cls, cfg: Mapping[str, Any]) -> "HestonModel":
         return cls(cos=HestonCosSettings.from_config(cfg), iv=ImpliedVolSettings.from_config(cfg))
 
-
-
     @staticmethod
     def _as_batch(params: np.ndarray) -> np.ndarray:
         p = np.asarray(params, dtype=float)
@@ -93,8 +90,6 @@ class HestonModel:
         long_scale = math.sqrt(tau_safe / self.cos.short_tau_ref)
         scale = max(1.0, short_scale, long_scale)
         return int(min(self.cos.n_terms_max, round(self.cos.n_terms_base * scale)))
-
- 
 
     def price_calls(
         self,

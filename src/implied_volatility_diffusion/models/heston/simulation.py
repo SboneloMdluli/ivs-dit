@@ -55,4 +55,3 @@ def milstein_step(
 
     log_s_next = math.log(float(s)) + (float(r) - float(q) - 0.5 * v_pos) * dt_f + sqrt_v * d_w1
     return float(math.exp(log_s_next)), float(v_next)
-
