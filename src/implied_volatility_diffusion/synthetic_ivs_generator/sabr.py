@@ -12,7 +12,7 @@ import numpy as np
 from scipy import optimize
 
 
-def sabr_hagan_lognormal_iv(
+def sabr_lognormal_iv(
     forward: float,
     strike: float,
     tau: float,
@@ -74,7 +74,7 @@ def _x(rho: float, z: float) -> float:
     return math.log(a / b)
 
 
-def sabr_hagan_lognormal_iv_array(
+def sabr_lognormal_iv_array(
     forward: np.ndarray,
     strike: np.ndarray,
     tau: np.ndarray,
@@ -83,7 +83,7 @@ def sabr_hagan_lognormal_iv_array(
     rho: float,
     nu: float,
 ) -> np.ndarray:
-    """Element-wise Hagan IV for broadcastable ``forward``, ``strike``, ``tau``."""
+    """SABR lognormal implied vol for ``forward``, ``strike``, ``tau``."""
     f = np.asarray(forward, dtype=float)
     k = np.asarray(strike, dtype=float)
     t = np.asarray(tau, dtype=float)
@@ -94,7 +94,9 @@ def sabr_hagan_lognormal_iv_array(
         op_flags=[["readonly"], ["readonly"], ["readonly"], ["writeonly"]],
     )
     for fv, kv, tv, ov in it:
-        ov[...] = sabr_hagan_lognormal_iv(float(fv), float(kv), float(tv), alpha, beta, rho, nu)
+        ov[...] = sabr_lognormal_iv(
+            float(fv), float(kv), float(tv), alpha, beta, rho, nu
+        )
     return out
 
 
@@ -122,7 +124,7 @@ def calibrate_sabr_to_implied_vols(
         iv_floor: Ignore quotes with IV below this threshold.
 
     Returns:
-        Tuple ``(alpha, rho, nu, result)`` where ``result`` is the SciPy optimizer output.
+        ``alpha``, ``rho``, ``nu``.
     """
     strikes_arr = np.asarray(strikes, dtype=float).ravel()
     market_iv_arr = np.asarray(market_ivs, dtype=float).ravel()
@@ -130,7 +132,12 @@ def calibrate_sabr_to_implied_vols(
         raise ValueError("strikes and market_ivs must have the same shape")
     if tau <= 0.0 or forward <= 0.0:
         raise ValueError("forward and tau must be positive for calibration")
-    valid = np.isfinite(strikes_arr) & np.isfinite(market_iv_arr) & (strikes_arr > 0.0) & (market_iv_arr > iv_floor)
+    valid = (
+        np.isfinite(strikes_arr)
+        & np.isfinite(market_iv_arr)
+        & (strikes_arr > 0.0)
+        & (market_iv_arr > iv_floor)
+    )
     fit_strikes = strikes_arr[valid]
     fit_ivs = market_iv_arr[valid]
     if fit_strikes.size < 3:
@@ -156,7 +163,7 @@ def calibrate_sabr_to_implied_vols(
         alpha_x, rho_x, nu_x = float(x[0]), float(x[1]), float(x[2])
         model = np.array(
             [
-                sabr_hagan_lognormal_iv(
+                sabr_lognormal_iv(
                     forward,
                     float(k),
                     tau,
@@ -171,7 +178,6 @@ def calibrate_sabr_to_implied_vols(
         )
         bad = ~np.isfinite(model)
         err = model - fit_ivs
-        # Penalize invalid formula points strongly to steer optimizer back in-domain.
         err[bad] = 10.0
         return err
 

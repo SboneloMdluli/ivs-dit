@@ -83,21 +83,10 @@ https://drive.google.com/drive/folders/1RyOj4Ylcqgo5ItAcTGJWsiuKayZ-qvYI?usp=dri
 
 ## SABR baseline surface generator
 
-**Goal:** generate and calibrate **Black implied-volatility surfaces** under the **SABR lognormal approximation (Hagan 2002)** so the project has a classical baseline before full diffusion/transformer training.
+SABR usage and implementation details are documented in:
 
-**Interpolation on market data:** step-by-step example in [`docs/sabr_interpolation.md`](docs/sabr_interpolation.md).
-
-**SABR core math** in `src/implied_volatility_diffusion/synthetic_ivs_generator/sabr.py`:
-
-- `sabr_lognormal_iv` evaluates one implied vol for `(forward, strike, tau)`.
-- `calibrate_sabr_to_implied_vols` calibrates `(alpha, rho, nu)` for one expiry smile with bounded `scipy.optimize.least_squares`.
-
-**Surface assembly** in `src/implied_volatility_diffusion/synthetic_ivs_generator/sabr_iv_surface.py`:
-
-- `implied_vol_surface_for_params` builds one full surface from one SABR parameter vector.
-- `lhs_sabr_params` and `implied_vol_surfaces_lhs` generate synthetic SABR surfaces from LHS draws.
-- `calibrate_params_for_expiries` calibrates one SABR smile per market expiry.
-- `implied_vol_surface_from_calibrated_slices` maps calibrated expiry slices to the grid (nearest-expiry mapping by default).
+- [`docs/sabr_README.md`](docs/sabr_README.md) (project-facing SABR guide)
+- [`docs/sabr_interpolation.md`](docs/sabr_interpolation.md) (detailed interpolation notes)
 
 ## Generic surface engine
 

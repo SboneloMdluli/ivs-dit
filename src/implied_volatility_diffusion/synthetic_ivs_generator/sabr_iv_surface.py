@@ -15,7 +15,7 @@ from implied_volatility_diffusion.iv_surface import (
 )
 from implied_volatility_diffusion.synthetic_ivs_generator.sabr import (
     calibrate_sabr_to_implied_vols,
-    sabr_hagan_lognormal_iv,
+    sabr_lognormal_iv,
 )
 
 SABR_PARAM_ORDER = ("alpha", "rho", "nu")
@@ -50,7 +50,7 @@ def implied_vol_surface_for_params(
         fwd = forward_from_spot(spot, tjf, r, q)
         strikes = m * spot
         for i, k in enumerate(strikes):
-            out[i, j] = sabr_hagan_lognormal_iv(fwd, float(k), tjf, alpha, beta, rho, nu)
+            out[i, j] = sabr_lognormal_iv(fwd, float(k), tjf, alpha, beta, rho, nu)
     return m, tau, out
 
 
@@ -196,7 +196,7 @@ def implied_vol_surface_from_calibrated_slices(
         fwd = forward_from_spot(spot, float(tj), r, q)
         strikes = m * spot
         for i, k in enumerate(strikes):
-            out[i, j] = sabr_hagan_lognormal_iv(fwd, float(k), float(tj), alpha, beta, rho, nu)
+            out[i, j] = sabr_lognormal_iv(fwd, float(k), float(tj), alpha, beta, rho, nu)
     return out
 
 

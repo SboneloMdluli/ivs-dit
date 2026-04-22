@@ -11,7 +11,7 @@ import yaml
 from implied_volatility_diffusion.iv_surface import grid_axes
 from implied_volatility_diffusion.synthetic_ivs_generator.sabr import (
     calibrate_sabr_to_implied_vols,
-    sabr_hagan_lognormal_iv,
+    sabr_lognormal_iv,
 )
 from implied_volatility_diffusion.synthetic_ivs_generator.sabr_iv_surface import (
     calibrate_params_for_expiries,
@@ -32,14 +32,14 @@ def _load_sabr_cfg() -> dict:
 
 def test_hagan_atm_positive() -> None:
     F, K, T = 100.0, 100.0, 0.5
-    iv = sabr_hagan_lognormal_iv(F, K, T, alpha=0.25, beta=0.5, rho=-0.2, nu=0.4)
+    iv = sabr_lognormal_iv(F, K, T, alpha=0.25, beta=0.5, rho=-0.2, nu=0.4)
     assert np.isfinite(iv) and iv > 0.0
 
 
 def test_hagan_wing_differs_from_atm() -> None:
     F, T = 100.0, 0.5
-    iv_atm = sabr_hagan_lognormal_iv(F, F, T, 0.25, 0.5, -0.3, 0.5)
-    iv_put = sabr_hagan_lognormal_iv(F, 85.0, T, 0.25, 0.5, -0.3, 0.5)
+    iv_atm = sabr_lognormal_iv(F, F, T, 0.25, 0.5, -0.3, 0.5)
+    iv_put = sabr_lognormal_iv(F, 85.0, T, 0.25, 0.5, -0.3, 0.5)
     assert abs(iv_put - iv_atm) > 1e-4
 
 
@@ -48,7 +48,7 @@ def test_calibrate_recovers_synthetic_surface() -> None:
     alpha_t, rho_t, nu_t = 0.22, -0.35, 0.45
     strikes = np.linspace(80.0, 120.0, 12)
     mkt = np.array(
-        [sabr_hagan_lognormal_iv(F, float(k), T, alpha_t, beta, rho_t, nu_t) for k in strikes],
+        [sabr_lognormal_iv(F, float(k), T, alpha_t, beta, rho_t, nu_t) for k in strikes],
         dtype=float,
     )
     alpha, rho, nu, res = calibrate_sabr_to_implied_vols(F, T, strikes, mkt, beta=beta, initial_guess=(0.2, 0.0, 0.4))
@@ -94,7 +94,7 @@ def test_calibrate_params_for_expiries_and_grid_map() -> None:
         ks = np.linspace(F * 0.85, F * 1.15, 10)
         alpha_t, rho_t, nu_t = 0.2 + 0.02 * float(T), -0.25, 0.4
         ivs = np.array(
-            [sabr_hagan_lognormal_iv(F, float(k), float(T), alpha_t, beta, rho_t, nu_t) for k in ks],
+            [sabr_lognormal_iv(F, float(k), float(T), alpha_t, beta, rho_t, nu_t) for k in ks],
             dtype=float,
         )
         strikes_sets.append(ks)
