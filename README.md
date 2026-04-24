@@ -1,6 +1,10 @@
-# Implied-Volatility-Surface-Diffusion-Transformer (IVS-DiT)
+# Implied Volatility Diffusion
 
-## Setup
+`implied-volatility-diffusion` is a research codebase for building, validating, and modeling implied-volatility surfaces (IVS).
+
+## Quick Start
+
+### 1) Install dependencies
 
 With [uv](https://github.com/astral-sh/uv):
 
@@ -8,86 +12,42 @@ With [uv](https://github.com/astral-sh/uv):
 uv sync
 ```
 
-For Jupyter:
+For notebook workflows:
 
 ```bash
 uv sync --group notebooks
 ```
 
-## Tests
+### 2) Run tests
 
 ```bash
 uv run pytest
 ```
 
-## Pre-commit
+### 3) Run pre-commit checks
 
 ```bash
 uv run pre-commit run --all-files
 ```
 
+## Project Layout
+
+- `src/implied_volatility_diffusion/`: package code (models, pricing, synthetic surfaces, data utilities).
+- `config/`: YAML configs for synthetic surface generation and shared grids.
+- `notebooks/`: exploratory and reproducible research notebooks.
+- `data/`: raw and processed datasets.
+- `docs/`: focused technical documentation.
+
 ## Configuration
 
-[`config/heston_iv_surface.yaml`](config/heston_iv_surface.yaml) Market, Heston parameter box, Latin Hypercube, Black-Scholes implied-vol inversion, and Heston-COS pricer settings.
-[`config/sabr_iv_surface.yaml`](config/sabr_iv_surface.yaml) Market assumptions, SABR parameter box, Latin Hypercube settings, and shared moneyness and maturity grid.
-[`config/iv_surface_grid.yaml`](config/iv_surface_grid.yaml) Shared grid and plot surface settings.
+- [`config/heston_iv_surface.yaml`](config/heston_iv_surface.yaml): Heston market assumptions, parameter ranges, LHS, COS settings, and IV inversion settings.
+- [`config/sabr_iv_surface.yaml`](config/sabr_iv_surface.yaml): SABR market assumptions, parameter ranges, LHS, and grid settings.
+- [`config/iv_surface_grid.yaml`](config/iv_surface_grid.yaml): shared moneyness/maturity grid and plotting defaults.
 
-## Heston-COS synthetic implied-volatility generator
-## Option Data Pipeline
+## Documentation
 
-### Objective:
-
-This pipeline constructs a multi-year historical option chain data from raw option chain files, then standardizes the schema and produces a clean dataset suitable for:
-- IVS construction
-- Smoothing and interpolation
-- Model training and validation
-
-### Data Source:
-
-- Raw option chain files: `data/raw/optiondx/` (txt files, source: `www.optionsdx.com`)
-- 5 years of monthly data (60 files)
-
-Preprocessed datasets (raw + cleaned) are available here:
-
-https://drive.google.com/drive/folders/1RyOj4Ylcqgo5ItAcTGJWsiuKayZ-qvYI?usp=drive_link
-
-### Pipeline Overview:
-1. **Data Ingestion**:
-- Load raw TXT files into pandas DataFrames
-- Clean column names and normalize schema
-- Parse date fields
-- Robust numeric coercion across all option columns (handles vendor inconsistencies)
-2. **Quote Normalization**: Separate call and puts, each row becomes a single option type
-3. **Feature Engineering**: Calculate key derived features including:
-- Time to maturity $\tau$ - DTE / 365
-- log Moneyness $k$ - log(K/S)
-- Mid price: (bid + ask) / 2
-- Spread and relative spread
-- Total implied variance: $w=\tau \sigma^2$
-- smoothing weights: liquidity weight; vega weight; combined weight.
-
-4. **Data Cleaning**: Apply filters to keep positive bid/ask; valid IV; positive time to maturity; ask >= bid; reaonable spread (to be refined in future work)
-5. **Output**:
-- Combined raw dataset (9.3 million rows): `data/raw/raw.parquet`. with minimal processing.
-- Cleaned dataset (15.4 million rows): `data/processed/cleaned.parquet`. initially cleaned data and engineered features for modeling.
-
-**Goal:** produce many diverse **Black-Scholes implied-volatility** surfaces that are consistent with the **Heston stochastic-volatility** model for training and benchmarking.
-
-**Parameter sampling:** `lhs_heston_params` and `lhs_heston_params_multi_batch` sample rows in fixed order `HESTON_PARAM_ORDER`. Ranges come from `heston_ranges`; optional `lhs.log_uniform` maps selected positive parameters through log-uniform margins for better scale coverage.
-
-**Pricing:** for each `(strike, tau)` on the grid, `heston_call_cos` (Fang and Oosterlee Fourier-cosine method) evaluates the discounted European call under Heston.
-
-**Implied volatility:** model call price is inverted with `implied_volatility` in `black_scholes.py` using py_lets_be_rational, a short Newton refinement, and Brent fallback.
-
-**Batch surfaces:** `implied_vol_surfaces_lhs(cfg)` returns `(params, m, tau, iv)` with `iv` shape `(n_samples, n_moneyness, n_tau)`; total samples are `n_samples * n_batches` when multi-batch LHS is enabled.
-
-## SABR baseline surface generator
-
-SABR usage and implementation details are documented in:
-
-- [`docs/sabr_README.md`](docs/sabr_README.md) (project-facing SABR guide)
-- [`docs/sabr_interpolation.md`](docs/sabr_interpolation.md) (detailed interpolation notes)
-
-## Generic surface engine
-
-`src/implied_volatility_diffusion/iv_surface.py` is model-agnostic: it builds grid axes from config, samples parameter vectors with Latin Hypercube sampling, and assembles batches of surfaces. Both SABR and Heston reuse this shared grid and sampling pattern.
+- [`docs/heston_surface_generation.md`](docs/heston_surface_generation.md): Heston synthetic IV surface generation flow and outputs.
+- [`docs/sabr_surface_generation.md`](docs/sabr_surface_generation.md): SABR baseline generation and calibration flow.
+- [`docs/option_data_pipeline.md`](docs/option_data_pipeline.md): historical option-data ingestion, cleaning, and feature engineering pipeline.
+- [`docs/sabr_interpolation.md`](docs/sabr_interpolation.md): SABR interpolation walkthrough on market data.
+'

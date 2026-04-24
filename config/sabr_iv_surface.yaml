@@ -20,11 +20,9 @@ grid:
     step: 0.1
     end_point: 1.4
   tau:
-    start_point: 0.2
-    step: 0.2
-    end_point: 1.0
-    prepend:
-      - 0.05
+    start_point: 0.05
+    step: 0.05
+    end_point: 2.0
 
 lhs:
   n_samples: 32
@@ -34,6 +32,19 @@ lhs:
   log_uniform:
     - alpha
     - nu
+
+# Sequences of IV surfaces along a SABR SDE path
+sequential_ivs:
+  n_steps: 8
+  dt: 0.003968253968253968 # 1/252
+  path_seed_stride: 100000
+
+# Arbitrage guard applied to every emitted surface.
+# policy: none | warn | repair | filter | raise
+arbitrage_guard:
+  policy: repair
+  tol: 1.0e-8
+  repair_before_filter: true
 
 plot_surface:
   zlim: [0.05, 0.8]

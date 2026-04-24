@@ -8,7 +8,11 @@ import yaml
 
 
 def load_config(path: str | Path) -> dict[str, Any]:
-    """Load a YAML file and return a plain dict."""
+    """Load a YAML file and return a plain ``dict``.
+
+    Raises:
+        TypeError: if the YAML root is not a mapping.
+    """
     p = Path(path)
     with p.open("r", encoding="utf-8") as f:
         data = yaml.safe_load(f)

@@ -1,9 +1,17 @@
+# skew (strongly negative rho -> equity-style left tail)
 heston_ranges:
-  rho: [-0.99, -0.5]
-  sigma: [0.4, 1.0]
-  theta: [0.2, 0.5]
-  kappa: [2.0, 3.0]
-  v0: [0.1, 0.4]
+  rho: [-0.95, -0.6]
+  sigma: [0.6, 1.0]
+  theta: [0.06, 0.20]
+  kappa: [1.5, 2.5]
+  v0: [0.06, 0.20]
+
+implied_vol:
+  m_extrapolate_below: 0.52
+  tau_extrapolate_below: 0.05
+
+heston_cos_pricer:
+  n_terms_max: 6144
 
 grid:
   moneyness:
@@ -11,8 +19,5 @@ grid:
     step: 0.1
     end_point: 1.6
 
-implied_vol:
-  m_extrapolate_below: 0.52
-
 plot_surface:
-  zlim: [0.0, 1.0]
+  zlim: [0.0, 0.8]
