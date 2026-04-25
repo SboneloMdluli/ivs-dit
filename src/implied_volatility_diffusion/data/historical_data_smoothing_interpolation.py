@@ -2,24 +2,26 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 
+
 def gaussian_kernel_2d(
-        x: np.ndarray,
-        y: np.ndarray,
-        h1: float,
-        h2: float,
+    x: np.ndarray,
+    y: np.ndarray,
+    h1: float,
+    h2: float,
 ) -> np.ndarray:
     """2D Gaussian kernel weights for points (x, y) with bandwidths h1, h2."""
-    return (np.exp(- x * x / (2 * h1)) * np.exp(- y * y / (2 * h2))) / (2 * np.pi)
+    return (np.exp(-x * x / (2 * h1)) * np.exp(-y * y / (2 * h2))) / (2 * np.pi)
+
 
 def interpolate_and_extrapolate(
-        x_data: np.ndarray,
-        y_data: np.ndarray,
-        x_new: np.ndarray,
+    x_data: np.ndarray,
+    y_data: np.ndarray,
+    x_new: np.ndarray,
 ) -> np.ndarray:
     """Interpolate/extrapolate y values at x_new based on (x_data, y_data)."""
     x_data = np.asarray(x_data, dtype=float)
@@ -44,17 +46,15 @@ def interpolate_and_extrapolate(
     )
     return f(x_new)
 
-def interpolate_surface(
-        surface_in: np.ndarray,
-        x_in: np.ndarray,
-        tau_in: np.ndarray,
-        x_out: np.ndarray,
-        tau_out: np.ndarray,
-) -> np.ndarray:
-    """
-    Interpolate/extrapolate surface values from (x_in, tau_in) grid to (x_out, tau_out) grid.    
-    """
 
+def interpolate_surface(
+    surface_in: np.ndarray,
+    x_in: np.ndarray,
+    tau_in: np.ndarray,
+    x_out: np.ndarray,
+    tau_out: np.ndarray,
+) -> np.ndarray:
+    """Interpolate/extrapolate surface values from (x_in, tau_in) grid to (x_out, tau_out) grid."""
     tmp = np.zeros((len(x_out), len(tau_in)), dtype=float)
     for j in range(len(tau_in)):
         tmp[:, j] = interpolate_and_extrapolate(x_in, surface_in[:, j], x_out)
@@ -64,6 +64,7 @@ def interpolate_surface(
         out[i, :] = interpolate_and_extrapolate(tau_in, tmp[i, :], tau_out)
 
     return out
+
 
 def load_cleaned_data(path: str | Path) -> pd.DataFrame:
     path = Path(path)
@@ -89,38 +90,36 @@ def load_cleaned_data(path: str | Path) -> pd.DataFrame:
 
     return df
 
+
 def filter_day_for_surface(
-        day_df: pd.DataFrame,
-        k_range: tuple[float, float] = (-0.5, 0.5),
-        tau_range: tuple[float, float] = (0.01, 2.0),
-        iv_range: tuple[float, float] = (0.01, 2.0),
+    day_df: pd.DataFrame,
+    k_range: tuple[float, float] = (-0.5, 0.5),
+    tau_range: tuple[float, float] = (0.01, 2.0),
+    iv_range: tuple[float, float] = (0.01, 2.0),
 ) -> pd.DataFrame:
     """Filter day_df for valid points in specified (k, tau, iv) ranges."""
-    required_cols = {"k", "tau", "iv", 'vega'}
+    required_cols = {"k", "tau", "iv", "vega"}
     missing_cols = [c for c in required_cols if c not in day_df.columns]
     if missing_cols:
         raise ValueError(f"Missing columns in day_df: {missing_cols}")
-    
+
     out = day_df.copy()
     out = out.dropna(subset=["quote_date", "k", "tau", "iv", "vega"]).copy()
     out = out[
-        out["k"].between(*k_range)
-        & out["tau"].between(*tau_range)
-        & out["iv"].between(*iv_range)
-        & (out["vega"] > 0)
+        out["k"].between(*k_range) & out["tau"].between(*tau_range) & out["iv"].between(*iv_range) & (out["vega"] > 0)
     ].copy()
     return out
 
+
 def build_weight_for_smoothing(
-        day_df: pd.DataFrame,
-        weight_col: str = "vega",
-        clip_upper: float | None = None,
-        sqrt_weight: bool = False,
+    day_df: pd.DataFrame,
+    weight_col: str = "vega",
+    clip_upper: float | None = None,
+    sqrt_weight: bool = False,
 ) -> np.ndarray:
     """Build weight array for smoothing based on specified column, with optional clipping and sqrt."""
     if weight_col not in day_df.columns:
         raise ValueError(f"Weight column '{weight_col}' not found in day_df.")
-    
     w = day_df[weight_col].to_numpy(dtype=float)
 
     if sqrt_weight:
@@ -131,16 +130,17 @@ def build_weight_for_smoothing(
 
     return w
 
+
 def smooth_surface(
-        iv: np.ndarray,
-        x_in: np.ndarray,
-        tau_in: np.ndarray,
-        weights: np.ndarray,
-        x_grid: np.ndarray,
-        tau_grid: np.ndarray,
-        h1: float = 0.01,
-        h2: float = 0.10,
-        min_mass: float = 1e-8,
+    iv: np.ndarray,
+    x_in: np.ndarray,
+    tau_in: np.ndarray,
+    weights: np.ndarray,
+    x_grid: np.ndarray,
+    tau_grid: np.ndarray,
+    h1: float = 0.01,
+    h2: float = 0.10,
+    min_mass: float = 1e-8,
 ) -> np.ndarray:
     """Smooth IV surface using weighted Gaussian kernel."""
     iv = np.asarray(iv, dtype=float)
@@ -157,7 +157,6 @@ def smooth_surface(
             dt = tau0 - tau_in
             kernel_weights = gaussian_kernel_2d(dx, dt, h1, h2) * weights
             mass = np.sum(kernel_weights)
-            
             if mass < min_mass:
                 continue
 
@@ -165,16 +164,17 @@ def smooth_surface(
             Z[i, j] = z
     return Z
 
+
 def build_kernel_surface(
-        day_df: pd.DataFrame,
-        x_col: str = "k",
-        weight_col: str = "vega",
-        x_grid: np.ndarray | None = None,
-        tau_grid: np.ndarray | None = None,
-        h1: float = 0.01,
-        h2: float = 0.10,
-        clip_upper: float | None = None,
-        sqrt_weight: bool = False,
+    day_df: pd.DataFrame,
+    x_col: str = "k",
+    weight_col: str = "vega",
+    x_grid: np.ndarray | None = None,
+    tau_grid: np.ndarray | None = None,
+    h1: float = 0.01,
+    h2: float = 0.10,
+    clip_upper: float | None = None,
+    sqrt_weight: bool = False,
 ) -> tuple[np.ndarray, pd.DataFrame]:
     """Build smoothed IV surface for a day using Gaussian kernel."""
     if x_grid is None or tau_grid is None:
@@ -204,10 +204,12 @@ def build_kernel_surface(
 
     return Z, day_sub
 
+
 ## Plot functions:
 
+
 def plot_smile(
-       x_grid: np.ndarray,
+    x_grid: np.ndarray,
     tau_grid: np.ndarray,
     Z: np.ndarray,
     sample_date: pd.Timestamp,
@@ -246,8 +248,7 @@ def plot_surface_3d(
     elev: float = 25,
     azim: float = 235,
 ) -> None:
-    """
-    3D surface plot using the existing project style.
+    """3D surface plot using the existing project style.
 
     Parameters
     ----------
@@ -268,7 +269,6 @@ def plot_surface_3d(
     azim : float
         Azimuth angle
     """
-
     fig = plt.figure(figsize=(9, 6))
     ax = fig.add_subplot(111, projection="3d")
 

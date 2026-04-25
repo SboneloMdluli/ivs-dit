@@ -20,14 +20,14 @@ In this repo, the baseline is based on the SABR lognormal approximation
 
 ## Core modules
 
-- `src/implied_volatility_diffusion/synthetic_ivs_generator/sabr.py`
-  - `sabr_lognormal_iv`
+- `src/implied_volatility_diffusion/models/sabr/hagan.py`
+  - `sabr_hagan_lognormal_iv` (Hagan lognormal Black IV)
+- `src/implied_volatility_diffusion/models/sabr/calibration.py`
   - `calibrate_sabr_to_implied_vols`
-- `src/implied_volatility_diffusion/synthetic_ivs_generator/sabr_iv_surface.py`
   - `calibrate_params_for_expiries`
   - `implied_vol_surface_from_calibrated_slices`
-  - `implied_vol_surface_for_params`
-  - LHS helpers for synthetic SABR surfaces
+- `src/implied_volatility_diffusion/synthetic/sabr.py`
+  - LHS surface batches, sequential paths, plotting helpers
 - `src/implied_volatility_diffusion/data/historical_sabr_interpolation.py`
   - historical-day SABR calibration and dense surface build
   - kernel-vs-SABR comparison helpers
@@ -116,4 +116,3 @@ for overlap and RMSE summary.
 For the full mathematical and API walkthrough, see:
 
 - `docs/sabr_interpolation.md`
-

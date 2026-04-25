@@ -1,10 +1,12 @@
-"""Preset Heston IV surface YAML overlay."""
+"""Preset Heston-IV-surface YAML overlays."""
+
+from __future__ import annotations
 
 from enum import Enum
 
 
 class HestonIvGoal(str, Enum):
-    """Preset Heston IV surface YAML overlay; value is the stem suffix heston_goal_{value}.yaml."""
+    """Preset Heston IV-surface YAML overlay; value is the stem of the overlay file."""
 
     LOW_VOL = "low_vol"
     HIGH_VOL = "high_vol"
@@ -22,7 +24,7 @@ HESTON_GOAL_YAML: dict[HestonIvGoal, str] = {goal: heston_goal_overlay_filename(
 
 
 def coerce_heston_iv_goal(goal: HestonIvGoal | str) -> HestonIvGoal:
-    """Return ``goal`` as HestonIvGoal, accepting the enum or its ``value`` string."""
+    """Accept either the enum member or its ``value`` string."""
     if isinstance(goal, HestonIvGoal):
         return goal
     key = str(goal).strip()

@@ -26,7 +26,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from implied_volatility_diffusion.synthetic_ivs_generator.implied_vol_solver import call_price
+from implied_volatility_diffusion.pricing.black_scholes import bs_call_price_scalar as call_price
 
 
 @dataclass(frozen=True)
