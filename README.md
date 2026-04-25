@@ -1,6 +1,6 @@
 # Implied Volatility Diffusion
 
-`implied-volatility-diffusion` is a research codebase for building, validating, and modeling implied-volatility surfaces (IVS).
+`implied-volatility-diffusion` is a research codebase for building, validating, and modeling implied-volatility surfaces (IVS) primarily using diffusion models.
 
 ## Quick Start
 
