@@ -8,7 +8,7 @@ import numpy as np
 from py_vollib.black_scholes_merton import black_scholes_merton as _bsm_price
 from py_vollib.black_scholes_merton.greeks.analytical import vega as _bsm_vega_pct
 
-_VEGA_PER_UNIT_SCALE = 100.0 # 100% per unit of volatility
+_VEGA_PER_UNIT_SCALE = 100.0  # 100% per unit of volatility
 
 
 def _price_scalar(s: float, k: float, t: float, r: float, sig: float, q: float) -> float:

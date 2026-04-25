@@ -5,9 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
-import yaml
 
 import numpy as np
+import yaml
 
 from implied_volatility_diffusion.core.grid import build_grid_axis
 
@@ -57,7 +57,6 @@ class UnifiedGrid:
     def meshgrid(self) -> tuple[np.ndarray, np.ndarray]:
         """Return ``(K, T)`` meshgrids with ``indexing='ij'``."""
         return np.meshgrid(self.log_moneyness, self.tau, indexing="ij")
-
 
     @classmethod
     def default(cls) -> "UnifiedGrid":
@@ -139,7 +138,6 @@ def _bilinear_resample(
     ys = np.asarray(y_src, dtype=float)
     xd = np.asarray(x_dst, dtype=float)
     yd = np.asarray(y_dst, dtype=float)
-
 
     x_clip = np.clip(xd, xs[0], xs[-1])
     y_clip = np.clip(yd, ys[0], ys[-1])

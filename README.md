@@ -51,4 +51,3 @@ uv run pre-commit run --all-files
 - `[docs/option_data_pipeline.md](docs/option_data_pipeline.md)`: historical option-data ingestion, cleaning, and feature engineering pipeline.
 - `[docs/sabr_interpolation.md](docs/sabr_interpolation.md)`: SABR interpolation walkthrough on market data.
 '
-

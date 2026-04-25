@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from pathlib import Path
+
 import numpy as np
 
 DEFAULT_SIGMA_FLOOR = 1e-6
@@ -92,8 +93,7 @@ class SurfaceNormalizer:
     def _finalize(self):
         var = np.where(self.count > 1, self._m2 / (self.count - 1), np.nan)
         std = np.sqrt(var)
-        self.std = np.where((std > self.sigma_floor) & np.isfinite(std),
-                            std, self.sigma_floor)
+        self.std = np.where((std > self.sigma_floor) & np.isfinite(std), std, self.sigma_floor)
         self.fitted = self.count.any()
 
     def _check_fitted(self):
@@ -129,18 +129,21 @@ class SurfaceNormalizer:
         self._check_fitted()
         p = Path(path)
         p.parent.mkdir(parents=True, exist_ok=True)
-        np.savez(p, mean=self.mean, std=self.std,
-                 count=self.count, m2=self._m2,
-                 grid_shape=self.grid_shape,
-                 sigma_floor=self.sigma_floor,
-                 iv_floor=self.iv_floor)
+        np.savez(
+            p,
+            mean=self.mean,
+            std=self.std,
+            count=self.count,
+            m2=self._m2,
+            grid_shape=self.grid_shape,
+            sigma_floor=self.sigma_floor,
+            iv_floor=self.iv_floor,
+        )
 
     @classmethod
     def load(cls, path):
         d = np.load(Path(path))
-        obj = cls(tuple(d["grid_shape"]),
-                  float(d["sigma_floor"]),
-                  float(d["iv_floor"]))
+        obj = cls(tuple(d["grid_shape"]), float(d["sigma_floor"]), float(d["iv_floor"]))
         obj.mean = d["mean"]
         obj.std = d["std"]
         obj.count = d["count"]
