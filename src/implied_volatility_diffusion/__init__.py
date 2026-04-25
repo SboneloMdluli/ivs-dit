@@ -32,6 +32,7 @@ from implied_volatility_diffusion.synthetic_ivs_generator.heston_simulation impo
     is_feller_satisfied,
     milstein_step,
 )
+from implied_volatility_diffusion.noise_scheduler import VPNoiseScheduler
 from ivs_config import load_config, merge_config, merge_config_files
 
 __version__ = "0.1.0"
@@ -65,4 +66,5 @@ __all__ = [
     "merge_config",
     "merge_config_files",
     "milstein_step",
+    "VPNoiseScheduler",
 ]
