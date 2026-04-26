@@ -1,8 +1,5 @@
 """Tests for the closed-form VP forward noising scheduler."""
 
-import importlib.util
-from pathlib import Path
-
 import numpy as np
 
 from implied_volatility_diffusion import VPNoiseScheduler
@@ -50,4 +47,3 @@ def test_vp_scheduler_variance_follows_closed_form_and_is_bounded() -> None:
 
         # Explicit boundedness
         assert var_emp <= max(var0, 1.0) + 1e-6
-
