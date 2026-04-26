@@ -1,12 +1,4 @@
-"""SABR calibration on historic data and dense IV grid.
-
-Expects rows from the processed dataset (after ``clean_data`` in
-``data_pipeline.py``, typically ``data/processed/processed.parquet``; load with
-``load_cleaned_data`` from ``historical_data_smoothing_interpolation``).
-Uses the same cleaned-day schema (``k``, ``tau``, ``iv``, ``vega``, ``strike``,
-``underlying_last``) as the kernel smoother module; your dense ``(k_grid, tau_grid)``
-for SABR evaluation can be chosen independently. See ``docs/sabr_interpolation.md``.
-"""
+"""SABR calibration helpers for historical data surfaces."""
 
 from __future__ import annotations
 
@@ -101,12 +93,7 @@ def prepare_historical_sabr_smiles(
     min_strikes_per_expiry: int = 3,
     filter_kw: dict[str, Any] | None = None,
 ) -> tuple[pd.DataFrame, float, list[np.ndarray], list[np.ndarray], np.ndarray]:
-    """Filter one day and build per-expiry strike/IV arrays for SABR calibration.
-
-    Returns ``day_sub``, ``spot``, ``strikes_per_expiry``, ``ivs_per_expiry``,
-    ``expiry_taus`` suitable for :func:`calibrate_params_for_expiries` in
-    ``sabr_iv_surface``.
-    """
+    """Filter one day and build per-expiry strike/IV arrays."""
     kw = dict(filter_kw or {})
     day_sub = filter_day_for_surface(day_df, **kw)
     spot = _spot_from_day(day_sub, spot_col)

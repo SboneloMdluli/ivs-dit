@@ -1,29 +1,4 @@
-"""Arbitrage guards for synthetic IV surface generation.
-
-This module wraps :func:`build_surfaces` with a policy that enforces the
-Roper / Gatheral no-arbitrage conditions already diagnosed by
-:mod:`implied_volatility_diffusion.arbitrage`:
-
-* **butterfly** (strike-wise convex, non-increasing undiscounted call),
-* **calendar** (total variance ``w = sigma^2 * tau`` non-decreasing in tau),
-* **bounds** (BS call prices inside the model-free interval).
-
-Policies (selected per recipe or via ``cfg['arbitrage_guard']``):
-
-* ``"none"``     - no check, legacy behaviour.
-* ``"warn"``     - run checks, emit a :mod:`warnings` message on violations.
-* ``"repair"``   - project each surface onto the calendar-monotone cone,
-                    then re-check; emit a warning if residual violations remain.
-* ``"filter"``   - drop surfaces that fail the checks (with optional repair
-                    pass first); raises if the filtered batch is empty.
-* ``"raise"``    - raise :class:`ArbitrageError` on any violation.
-
-The calendar repair is a local per-moneyness cumulative-max projection of
-``w`` along the tau axis. It is idempotent and a minimum-perturbation fix:
-it never decreases any IV, and it preserves every already-monotone slice
-exactly. Butterfly violations are diagnosed but not auto-repaired (that
-requires a more elaborate SVI/SSVI projection out of scope here).
-"""
+"""Arbitrage guard policies for synthetic IV surfaces."""
 
 from __future__ import annotations
 
@@ -52,14 +27,7 @@ class ArbitrageError(ValueError):
 
 @dataclass(frozen=True)
 class GuardSettings:
-    """Arbitrage-guard knobs read from config.
-
-    Attributes:
-        policy: One of ``"none" | "warn" | "repair" | "filter" | "raise"``.
-        tol: Numerical tolerance used by the arbitrage checker.
-        repair_before_filter: If ``True``, apply calendar repair before the
-            filter policy re-checks surfaces (default ``True``).
-    """
+    """Arbitrage-guard options loaded from config."""
 
     policy: GuardPolicy = "repair"
     tol: float = 1e-8
@@ -67,6 +35,7 @@ class GuardSettings:
 
     @classmethod
     def from_config(cls, cfg: Mapping[str, Any]) -> "GuardSettings":
+        """Build settings from ``cfg['arbitrage_guard']``."""
         section = cfg.get("arbitrage_guard") or {}
         policy_raw = str(section.get("policy", "repair")).lower()
         if policy_raw not in _ALLOWED_POLICIES:
@@ -78,29 +47,8 @@ class GuardSettings:
         )
 
 
-# ---------------------------------------------------------------------------
-# repair primitives
-# ---------------------------------------------------------------------------
-
-
 def repair_calendar_monotone(iv: np.ndarray, tau: np.ndarray) -> np.ndarray:
-    """Project an IV surface onto the calendar-monotone cone.
-
-    Enforces that the total implied variance ``w(m, tau_i) = iv^2 * tau_i``
-    is non-decreasing in ``tau_i`` for every fixed moneyness. Accepts an
-    array with a trailing ``(..., n_moneyness, n_tau)`` layout; the
-    projection is applied along the last axis.
-
-    Non-finite / non-positive IVs are left untouched in place (they are
-    surfaced as-is and counted by the arbitrage checker).
-
-    Args:
-        iv: Implied-vol tensor, shape ``(..., n_moneyness, n_tau)``.
-        tau: Strictly increasing year-fraction grid, shape ``(n_tau,)``.
-
-    Returns:
-        Corrected IV tensor with the same shape as ``iv``. Never mutates ``iv``.
-    """
+    """Enforce calendar monotonicity in total variance along ``tau``."""
     iv_arr = np.asarray(iv, dtype=float)
     t = np.asarray(tau, dtype=float).reshape(-1)
     if iv_arr.shape[-1] != t.size:
@@ -108,7 +56,7 @@ def repair_calendar_monotone(iv: np.ndarray, tau: np.ndarray) -> np.ndarray:
     if t.size < 2:
         return iv_arr.copy()
 
-    w = (iv_arr**2) * t  # broadcast along last axis
+    w = (iv_arr**2) * t
     valid = np.isfinite(w) & (iv_arr > 0.0)
     w_fill = np.where(valid, w, -np.inf)
     w_mono = np.maximum.accumulate(w_fill, axis=-1)
@@ -116,13 +64,7 @@ def repair_calendar_monotone(iv: np.ndarray, tau: np.ndarray) -> np.ndarray:
 
     with np.errstate(invalid="ignore", divide="ignore"):
         iv_new = np.sqrt(np.maximum(w_mono, 0.0) / t)
-    # Preserve positions that were not finite/positive to begin with.
     return np.where(valid, iv_new, iv_arr)
-
-
-# ---------------------------------------------------------------------------
-# guard orchestration
-# ---------------------------------------------------------------------------
 
 
 def _summarise(reports: Iterable[ArbitrageReport]) -> tuple[int, int, int, int]:
@@ -160,11 +102,7 @@ def enforce_arbitrage(
     dividend_yield: float,
     settings: GuardSettings,
 ) -> SurfaceBatch:
-    """Apply the guard ``settings.policy`` to ``batch`` and return the result.
-
-    The returned :class:`SurfaceBatch` may be shorter than the input in the
-    ``"filter"`` policy (arbitrage-violating rows dropped).
-    """
+    """Apply a guard policy to a generated surface batch."""
     if settings.policy == "none":
         return batch
 
@@ -196,7 +134,6 @@ def enforce_arbitrage(
         _raise_or_warn(reports, policy="warn", stage="post-repair")
         return batch
 
-    # filter: drop rows that still violate anything.
     keep_mask = np.array([r.arbitrage_free for r in reports], dtype=bool)
     leading = batch.iv.shape[:-2]
     keep_mask = keep_mask.reshape(leading) if leading else keep_mask
@@ -205,7 +142,6 @@ def enforce_arbitrage(
     if bool(np.all(keep_mask)):
         return batch
 
-    # Only support filtering along the single leading axis (the LHS-sample axis).
     if len(leading) != 1:
         raise ValueError(
             f"filter policy only supports iv tensors with a single leading sample axis; got leading shape {leading}"
@@ -235,11 +171,7 @@ def guarded_build_surfaces(
     inst_var_override: np.ndarray | None = None,
     guard: GuardSettings | None = None,
 ) -> SurfaceBatch:
-    """:func:`build_surfaces` with an arbitrage guard applied afterwards.
-
-    If ``guard`` is ``None`` the guard is loaded from ``cfg['arbitrage_guard']``
-    (defaults to ``policy="repair"``).
-    """
+    """Build surfaces, then apply arbitrage guard settings."""
     batch = build_surfaces(
         model,
         cfg,

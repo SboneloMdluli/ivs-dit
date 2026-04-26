@@ -1,15 +1,4 @@
-"""Black-Scholes-Merton call price / vega backed by :mod:`py_vollib`.
-
-The package-level functions keep their original vectorized NumPy API so every
-call site in the codebase is untouched; under the hood each element is routed
-through ``py_vollib.black_scholes_merton`` (price) and
-``py_vollib.black_scholes_merton.greeks.analytical.vega`` (vega, rescaled from
-per-1%% vol to per-1-unit vol so Newton iterations behave correctly).
-
-Degenerate inputs (non-positive ``tau``, non-positive ``sigma``,
-non-positive ``spot``/``strike``) are handled locally so :mod:`py_vollib`
-never sees values outside its supported domain.
-"""
+"""Black-Scholes-Merton call price and vega helpers."""
 
 from __future__ import annotations
 
@@ -19,7 +8,7 @@ import numpy as np
 from py_vollib.black_scholes_merton import black_scholes_merton as _bsm_price
 from py_vollib.black_scholes_merton.greeks.analytical import vega as _bsm_vega_pct
 
-_VEGA_PER_UNIT_SCALE = 100.0  # py_vollib returns vega per 1% vol; rescale to per 1.0.
+_VEGA_PER_UNIT_SCALE = 100.0  # 100% per unit of volatility
 
 
 def _price_scalar(s: float, k: float, t: float, r: float, sig: float, q: float) -> float:

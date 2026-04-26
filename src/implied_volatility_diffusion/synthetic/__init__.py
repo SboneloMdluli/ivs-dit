@@ -1,12 +1,4 @@
-"""Synthetic surface package.
-
-The legacy re-export API was removed. Import directly from submodules:
-
-- ``implied_volatility_diffusion.synthetic.heston``
-- ``implied_volatility_diffusion.synthetic.sabr``
-- ``implied_volatility_diffusion.synthetic.surface``
-- ``implied_volatility_diffusion.synthetic.goals``
-"""
+"""Synthetic surface namespace package."""
 
 __all__: list[str] = []
 

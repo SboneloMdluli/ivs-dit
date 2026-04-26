@@ -4,6 +4,19 @@ from implied_volatility_diffusion.arbitrage import (
     check_iv_surfaces_arbitrage,
 )
 from implied_volatility_diffusion.config import load_config, merge_config, merge_config_files
+from implied_volatility_diffusion.core.normalization import (
+    SurfaceNormalizer,
+    denormalize_surface,
+    iv_to_log_iv,
+    log_iv_to_iv,
+    normalize_surface,
+)
+from implied_volatility_diffusion.core.unified_grid import (
+    UNIFIED_IV_GRID_YAML,
+    UnifiedGrid,
+    resample_batch_to_unified_grid,
+    resample_to_unified_grid,
+)
 from implied_volatility_diffusion.iv_surface import (
     grid_axes,
     implied_vol_surface_on_grid,
@@ -62,6 +75,15 @@ __all__ = [
     "ArbitrageError",
     "ArbitrageReport",
     "GuardSettings",
+    "SurfaceNormalizer",
+    "UNIFIED_IV_GRID_YAML",
+    "UnifiedGrid",
+    "denormalize_surface",
+    "iv_to_log_iv",
+    "log_iv_to_iv",
+    "normalize_surface",
+    "resample_batch_to_unified_grid",
+    "resample_to_unified_grid",
     "HESTON_GOAL_YAML",
     "HESTON_IV_SURFACE_YAML",
     "HESTON_PARAM_ORDER",

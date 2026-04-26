@@ -1,0 +1,16 @@
+unified_grid:
+  log_moneyness:
+    start_point: -0.5
+    step: 0.025
+    end_point: 0.5
+  tau:
+    start_point: 0.05
+    step: 0.05
+    end_point: 2.0
+
+# Shared plot styling for surfaces rendered on this grid.
+plot_surface:
+  zlim: [0.0, 1.0]
+  elev: 25
+  azim: -55
+  cmap: turbo

@@ -1,11 +1,4 @@
-"""Implied-vol inversion: vectorized torch Newton + scalar SciPy/Jäckel fallback.
-
-The scalar fallback keeps full bit-for-bit compatibility with the previous
-``py_vollib``-based solver, which handles the awkward corners (prices just
-below intrinsic, Newton stalls near the wings, etc.). The batched torch
-solver is used to cheaply invert the bulk of a surface; any element that
-fails to meet tolerance is re-solved with the scalar path.
-"""
+"""Implied-vol inversion with Newton and scalar fallback."""
 
 from __future__ import annotations
 

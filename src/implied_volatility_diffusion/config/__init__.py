@@ -1,12 +1,4 @@
-"""YAML config loading, deep merge, and typed recipe objects.
-
-Public, stable surface area:
-
-* :func:`load_config`, :func:`merge_config`, :func:`merge_config_files`
-* :class:`SurfaceRecipe` — a thin dataclass wrapper around a nested config dict
-  that validates the ``market`` / ``grid`` / model-ranges / ``lhs`` keys used
-  by the synthetic-surface recipes.
-"""
+"""Config loading, merging, and recipe schema exports."""
 
 from implied_volatility_diffusion.config.loader import (
     load_config,

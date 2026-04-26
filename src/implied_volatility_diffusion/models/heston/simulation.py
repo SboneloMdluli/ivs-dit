@@ -1,10 +1,4 @@
-"""Full-truncation Milstein discretization of the risk-neutral Heston SDE.
-
-Two entry points:
-
-* :func:`milstein_step` — scalar NumPy path (used by sequential-IVS generator
-  to keep seed-by-seed bit-compatibility with the legacy implementation).
-"""
+"""Full-truncation Milstein step for the Heston SDE."""
 
 from __future__ import annotations
 

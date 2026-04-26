@@ -1,15 +1,4 @@
-"""NumPy-backed butterfly / calendar / bounds checks for IV surfaces.
-
-Two checks, following Roper / Gatheral:
-
-* **Butterfly (strike)**: ``C(K, tau)`` must be non-increasing and convex in ``K``.
-* **Calendar**: total implied variance ``w(m, tau) = sigma^2 * tau`` must
-  be non-decreasing in ``tau`` at each moneyness.
-
-Model-free bounds on the Black-Scholes call price are also enforced:
-
-.. math:: \\max(S e^{-q \\tau} - K e^{-r \\tau}, 0) \\le C \\le S e^{-q \\tau}.
-"""
+"""NumPy no-arbitrage checks for implied-vol surfaces."""
 
 from __future__ import annotations
 
@@ -74,7 +63,7 @@ def check_iv_surface_arbitrage(
     )
     finite = np.isfinite(c)
 
-    upper_slack = upper.unsqueeze(0) - c
+    upper_slack = upper.reshape(1, -1) - c
     lower_slack = c - lower
     bounds_slack = np.minimum(upper_slack, lower_slack)
     bounds_slack_f = np.where(finite, bounds_slack, np.inf)
@@ -86,10 +75,8 @@ def check_iv_surface_arbitrage(
         d_c_d_k = np.diff(c, axis=0) / np.diff(k_t).reshape(-1, 1)
         finite_mono = np.isfinite(d_c_d_k)
         worst_mono = float(np.max(np.where(finite_mono, d_c_d_k, -np.inf)))
-        n_mono_violations = int(np.sum(finite_mono & (d_c_d_k > tol)))
     else:
         worst_mono = 0.0
-        n_mono_violations = 0
 
     if m_t.size >= 3:
         dk_l = (k_t[1:-1] - k_t[:-2]).reshape(-1, 1)
@@ -104,8 +91,6 @@ def check_iv_surface_arbitrage(
         n_butterfly = 0
 
     butterfly_ok = (worst_butterfly >= -tol) and (worst_mono <= tol)
-    _ = n_mono_violations  # retained for diagnostics; exposed via ``butterfly_ok``.
-
     if t_t.size >= 2:
         w = (iv_t * iv_t) * t_t.reshape(1, -1)
         dw = np.diff(w, axis=1)

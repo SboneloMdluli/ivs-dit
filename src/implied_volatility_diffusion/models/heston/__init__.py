@@ -1,12 +1,4 @@
-"""Heston stochastic-volatility model (NumPy backend).
-
-The implementation is organised as:
-
-* :mod:`.cos` — Fang-Oosterlee COS pricer (vectorized over strikes).
-* :mod:`.simulation` — scalar full-truncation Milstein discretization.
-* :mod:`.model` — :class:`HestonModel` bundling the above behind
-  :class:`implied_volatility_diffusion.core.protocols.VolModel`.
-"""
+"""Heston model exports."""
 
 from implied_volatility_diffusion.models.heston.heston_cos import _heston_cf as heston_cf
 from implied_volatility_diffusion.models.heston.heston_cos import (

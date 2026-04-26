@@ -1,9 +1,4 @@
-"""Lightweight, optional validation around the synthetic-surface config dicts.
-
-The rest of the library accepts plain ``Mapping`` objects; ``SurfaceRecipe``
-is a convenience for users who want field-level errors up front instead of
-``KeyError``s deep inside a pricing call.
-"""
+"""Lightweight schema helper for surface-generation configs."""
 
 from __future__ import annotations
 
@@ -13,15 +8,7 @@ from typing import Any, Mapping
 
 @dataclass(frozen=True)
 class SurfaceRecipe:
-    """Typed view over a surface-generation config ``dict``.
-
-    Attributes:
-        market: Required ``spot``; optional ``dividend_yield`` / ``rate``.
-        grid: Moneyness + tau axis specs used by :func:`grid_axes`.
-        lhs: Sampling settings (``n_samples``, ``seed``, ...).
-        ranges: Parameter box ranges per model parameter.
-        extra: All remaining keys, passed through untouched (e.g. ``heston_cos_pricer``).
-    """
+    """Typed view over a surface-generation config mapping."""
 
     market: Mapping[str, Any]
     grid: Mapping[str, Any]
@@ -31,10 +18,7 @@ class SurfaceRecipe:
 
     @classmethod
     def from_dict(cls, cfg: Mapping[str, Any], *, ranges_key: str) -> "SurfaceRecipe":
-        """Validate and pick the known keys out of ``cfg``.
-
-        ``ranges_key`` selects e.g. ``"heston_ranges"`` or ``"sabr_ranges"``.
-        """
+        """Validate and extract known config sections."""
         if "market" not in cfg or "spot" not in cfg["market"]:
             raise KeyError("config requires market.spot")
         if "grid" not in cfg:
