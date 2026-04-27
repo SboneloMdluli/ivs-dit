@@ -4,7 +4,7 @@ import math
 
 import numpy as np
 
-from implied_volatility_diffusion.synthetic_ivs_generator.heston_simulation import (
+from implied_volatility_diffusion.models.heston.simulation import (
     feller_index,
     is_feller_satisfied,
     milstein_step,

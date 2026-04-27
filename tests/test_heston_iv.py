@@ -7,23 +7,18 @@ import numpy as np
 import pytest
 
 from implied_volatility_diffusion.iv_surface import grid_axes
-from implied_volatility_diffusion.synthetic_ivs_generator.heston_cos import (
-    _heston_cf,
-    heston_call_cos,
-)
-from implied_volatility_diffusion.synthetic_ivs_generator.heston_iv_surface import (
-    implied_vol_surface_for_params,
-    implied_vol_surfaces_lhs,
-    implied_vol_surfaces_sequential_lhs,
+from implied_volatility_diffusion.models.heston.heston_cos import _heston_cf, heston_call_cos
+from implied_volatility_diffusion.pricing.black_scholes import bs_call_price_scalar as call_price
+from implied_volatility_diffusion.pricing.implied_vol import implied_volatility
+from implied_volatility_diffusion.synthetic.heston import (
+    implied_vol_surface_for_heston_params as implied_vol_surface_for_params,
+    implied_vol_surfaces_heston_lhs as implied_vol_surfaces_lhs,
+    implied_vol_surfaces_heston_sequential_lhs as implied_vol_surfaces_sequential_lhs,
     lhs_heston_params,
     lhs_heston_params_multi_batch,
     load_heston_iv_surface_config,
 )
-from implied_volatility_diffusion.synthetic_ivs_generator.implied_vol_solver import (
-    call_price,
-    implied_volatility,
-)
-from ivs_config import merge_config
+from implied_volatility_diffusion.config import merge_config
 
 
 def test_heston_cf_at_zero() -> None:
