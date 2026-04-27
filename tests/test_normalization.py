@@ -102,7 +102,7 @@ def test_save_and_load_roundtrip(tmp_path) -> None:
 
 def test_shape_mismatch_raises() -> None:
     norm = SurfaceNormalizer(grid_shape=(3, 3))
-    with pytest.raises(ValueError, match="pixel shape"):
+    with pytest.raises(ValueError, match=r"Shape \(4, 4\) != \(3, 3\)"):
         norm.fit(np.ones((10, 4, 4)))
 
 
