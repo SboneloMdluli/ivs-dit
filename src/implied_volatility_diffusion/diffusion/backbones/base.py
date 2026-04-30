@@ -41,8 +41,11 @@ class DenoisingBackbone(nn.Module, ABC):
         Args:
             x: ``(B, C_in, H, W)`` noisy surface.
             t: ``(B,)`` long tensor of discrete timesteps.
-            cond: Optional ``(B, D)`` conditioning tensor (e.g. day-of-week,
-                regime label). Concrete backbones may ignore this.
+            cond: Optional conditioning tensor. Concrete backbones decide its
+                shape: surface-conditioned denoisers (e.g. the U-Net used for
+                next-day forecasting) expect ``(B, C_cond, H, W)`` matching
+                ``x``'s grid, while scalar/embedding backbones may accept
+                ``(B, D)``. Backbones may ignore this argument entirely.
 
         Returns:
             Tensor of shape ``(B, C_out, H, W)`` matching the input grid.
