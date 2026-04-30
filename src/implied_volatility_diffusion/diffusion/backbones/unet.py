@@ -60,6 +60,7 @@ class ResnetBlock(nn.Module):
         h = self.conv1(self.act1(self.norm1(x)))
         h = h + self.time_mlp(t_emb).unsqueeze(-1).unsqueeze(-1)
         h = self.conv2(self.dropout(self.act2(self.norm2(h))))
+
         return h + self.skip(x)
 
 
@@ -76,15 +77,19 @@ class SelfAttention2d(nn.Module):
         self.num_heads = int(num_heads)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+  
         b, c, h, w = x.shape
         qkv = self.qkv(self.norm(x))
         q, k, v = qkv.chunk(3, dim=1)
         head_dim = c // self.num_heads
+
         q = q.reshape(b, self.num_heads, head_dim, h * w).transpose(-1, -2)
         k = k.reshape(b, self.num_heads, head_dim, h * w).transpose(-1, -2)
         v = v.reshape(b, self.num_heads, head_dim, h * w).transpose(-1, -2)
+
         attn = F.scaled_dot_product_attention(q, k, v)
         out = attn.transpose(-1, -2).reshape(b, c, h, w)
+
         return x + self.proj(out)
 
 
@@ -149,6 +154,7 @@ class UNet(DenoisingBackbone):
             raise ValueError("num_res_blocks must be >= 1")
         if cond_channels < 0:
             raise ValueError("cond_channels must be >= 0")
+
         self.in_channels = int(in_channels)
         self.out_channels = int(out_channels)
         self.cond_channels = int(cond_channels)
@@ -228,35 +234,39 @@ class UNet(DenoisingBackbone):
         t: torch.Tensor,
         cond: torch.Tensor | None = None,
     ) -> torch.Tensor:
-        # if x.dim() != 4:
-        #     raise ValueError(f"UNet expects (B, C, H, W); got {tuple(x.shape)}")
-        # if x.shape[1] != self.in_channels:
-        #     raise ValueError(f"UNet expected in_channels={self.in_channels}, got {x.shape[1]}")
-        # if t.dim() == 0:
-        #     t = t.expand(x.shape[0])
-        # if t.shape[0] != x.shape[0]:
-        #     raise ValueError(f"timestep batch ({t.shape[0]}) must match input batch ({x.shape[0]})")
-        #
-        # if self.cond_channels > 0:
-        #     if cond is None:
-        #         raise ValueError(
-        #             f"UNet was built with cond_channels={self.cond_channels} but cond is None"
-        #         )
-        #     if cond.dim() != 4:
-        #         raise ValueError(f"cond must be (B, C, H, W); got {tuple(cond.shape)}")
-        #     if cond.shape[0] != x.shape[0]:
-        #         raise ValueError(f"cond batch ({cond.shape[0]}) must match x batch ({x.shape[0]})")
-        #     if cond.shape[1] != self.cond_channels:
-        #         raise ValueError(
-        #             f"cond expected {self.cond_channels} channels, got {cond.shape[1]}"
-        #         )
-        #     if cond.shape[-2:] != x.shape[-2:]:
-        #         raise ValueError(
-        #             f"cond spatial shape {tuple(cond.shape[-2:])} must match x {tuple(x.shape[-2:])}"
-        #         )
-        #     x = torch.cat([x, cond], dim=1)
-        # elif cond is not None:
-        #     raise ValueError("cond was provided but UNet has cond_channels=0")
+        """Predict the diffusion target from a noisy IV surface.
+
+        Args:
+            x: ``(B, in_channels, H, W)`` noisy surface.
+            t: ``(B,)`` long tensor of discrete timesteps.
+            cond: ``(B, cond_channels, H, W)`` conditioning surface (e.g. the
+                previous-day IV surface in z-space). Required when
+                ``cond_channels > 0`` and must share the spatial grid of ``x``;
+                ignored when ``cond_channels == 0``.
+        """
+        if self.cond_channels > 0:
+            if cond is None:
+                raise ValueError(
+                    f"UNet was built with cond_channels={self.cond_channels} "
+                    "but `cond` was not provided"
+                )
+            if cond.dim() != 4:
+                raise ValueError(
+                    f"`cond` must be 4D (B, C, H, W); got shape {tuple(cond.shape)}"
+                )
+            if cond.shape[0] != x.shape[0] or cond.shape[-2:] != x.shape[-2:]:
+                raise ValueError(
+                    "`cond` must match `x` on batch and spatial dims; "
+                    f"got cond={tuple(cond.shape)}, x={tuple(x.shape)}"
+                )
+            if cond.shape[1] != self.cond_channels:
+                raise ValueError(
+                    f"`cond` channel dim ({cond.shape[1]}) must equal "
+                    f"cond_channels ({self.cond_channels})"
+                )
+
+            # Concatenate the conditioning surface to the noisy input
+            x = torch.cat([x, cond.to(dtype=x.dtype, device=x.device)], dim=1)
 
         t_emb = self.time_embedding(t)
         h = self.input_proj(x)
