@@ -14,16 +14,13 @@ class SinusoidalTimeEmbedding(nn.Module):
         if dim <= 0 or dim % 2 != 0:
             raise ValueError("SinusoidalTimeEmbedding dim must be a positive even integer")
         self.dim = int(dim)
-   
-    def forward(self, t: torch.Tensor) -> torch.Tensor:
 
+    def forward(self, t: torch.Tensor) -> torch.Tensor:
         half = self.dim // 2
         # Match the annotated diffusion / DDPM reference:
         #   freq_i = exp(-log(10000) * i / (half - 1)),  i = 0..half-1.
         denom = max(half - 1, 1)
-        freqs = torch.exp(
-            -math.log(10000.0) * torch.arange(half, device=t.device, dtype=torch.float32) / denom
-        )
+        freqs = torch.exp(-math.log(10000.0) * torch.arange(half, device=t.device, dtype=torch.float32) / denom)
         args = t.float().unsqueeze(1) * freqs.unsqueeze(0)
         # [sin(t * freq), cos(t * freq)]
         return torch.cat([args.sin(), args.cos()], dim=-1)

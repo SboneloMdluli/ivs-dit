@@ -5,8 +5,6 @@ interface, which means the U-Net here can be replaced with a ViT (or any
 other denoiser) without touching the sampler or training loop.
 """
 
- 
-
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Mapping
 

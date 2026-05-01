@@ -1,7 +1,5 @@
 """Variance-preserving (VP) forward diffusion scheduler."""
 
- 
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -72,6 +70,7 @@ class VPNoiseScheduler(nn.Module):
         t_tensor = torch.as_tensor(t, dtype=torch.float32)
         if torch.any(t_tensor < 0):
             raise ValueError("t must be non-negative")
+
         alpha = torch.exp(-0.5 * self.beta * t_tensor)
         sigma = torch.sqrt(torch.clamp(1.0 - torch.exp(-self.beta * t_tensor), min=0.0))
         return alpha, sigma

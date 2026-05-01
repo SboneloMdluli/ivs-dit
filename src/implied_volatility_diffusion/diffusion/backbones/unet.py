@@ -77,7 +77,6 @@ class SelfAttention2d(nn.Module):
         self.num_heads = int(num_heads)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-  
         b, c, h, w = x.shape
         qkv = self.qkv(self.norm(x))
         q, k, v = qkv.chunk(3, dim=1)
@@ -212,9 +211,7 @@ class UNet(DenoisingBackbone):
                 in_c = cur_c + stage_c
                 stage.append(ResnetBlock(in_c, stage_c, time_dim=t_dim, dropout=dropout))
                 attn_stage.append(
-                    SelfAttention2d(stage_c, num_heads=attention_heads)
-                    if level in attn_levels
-                    else nn.Identity()
+                    SelfAttention2d(stage_c, num_heads=attention_heads) if level in attn_levels else nn.Identity()
                 )
                 cur_c = stage_c
             self.up_blocks.append(stage)
@@ -246,23 +243,16 @@ class UNet(DenoisingBackbone):
         """
         if self.cond_channels > 0:
             if cond is None:
-                raise ValueError(
-                    f"UNet was built with cond_channels={self.cond_channels} "
-                    "but `cond` was not provided"
-                )
+                raise ValueError(f"UNet was built with cond_channels={self.cond_channels} but `cond` was not provided")
             if cond.dim() != 4:
-                raise ValueError(
-                    f"`cond` must be 4D (B, C, H, W); got shape {tuple(cond.shape)}"
-                )
+                raise ValueError(f"`cond` must be 4D (B, C, H, W); got shape {tuple(cond.shape)}")
             if cond.shape[0] != x.shape[0] or cond.shape[-2:] != x.shape[-2:]:
                 raise ValueError(
-                    "`cond` must match `x` on batch and spatial dims; "
-                    f"got cond={tuple(cond.shape)}, x={tuple(x.shape)}"
+                    f"`cond` must match `x` on batch and spatial dims; got cond={tuple(cond.shape)}, x={tuple(x.shape)}"
                 )
             if cond.shape[1] != self.cond_channels:
                 raise ValueError(
-                    f"`cond` channel dim ({cond.shape[1]}) must equal "
-                    f"cond_channels ({self.cond_channels})"
+                    f"`cond` channel dim ({cond.shape[1]}) must equal cond_channels ({self.cond_channels})"
                 )
 
             # Concatenate the conditioning surface to the noisy input
