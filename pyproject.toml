@@ -38,6 +38,7 @@ notebooks = [
   "ipykernel>=6.29",
   "jupyterlab>=4.0",
   "seaborn>=0.13",
+  "tqdm>=4.67.3"
 ]
 
 [tool.uv]

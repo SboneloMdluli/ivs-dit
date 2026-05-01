@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from implied_volatility_diffusion.models.heston.heston_cos import heston_call_cos
+from implied_volatility_diffusion.models.heston.heston_cos import heston_call_cos as _heston_call_cos_impl
 
 
 def heston_call_cos_batch(
@@ -23,7 +23,7 @@ def heston_call_cos_batch(
     k_arr = np.asarray(strikes, dtype=float).reshape(-1)
     return np.array(
         [
-            heston_call_cos(
+            _heston_call_cos_impl(
                 spot,
                 kv,
                 tau,
@@ -59,7 +59,7 @@ def heston_call_cos(
 ) -> float:
     """Scalar Heston call price via COS."""
     return float(
-        heston_call_cos(
+        _heston_call_cos_impl(
             spot=spot,
             strike=strike,
             tau=tau,
