@@ -6,14 +6,7 @@ import torch.nn as nn
 
 
 class VPNoiseScheduler(nn.Module):
-    """VP scheduler with discrete DDPM-style timesteps plus standalone helpers.
-
-    Supports:
-    - discrete noising with ``q_sample`` for model training
-    - standalone forward noising from continuous time ``t`` via ``add_noise``
-    - convenience accessors (:meth:`extract`, :meth:`alpha_bar_at`) used by the
-      reverse-process sampler and arbitrage-weighted loss
-    """
+    """VP scheduler with discrete DDPM-style timesteps plus standalone helpers."""
 
     def __init__(
         self,
