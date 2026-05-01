@@ -26,13 +26,13 @@ def _sabr_black_vol(
     try:
         return float(
             ql.sabrVolatility(
-                float(strike),
-                float(forward),
-                float(tau),
-                float(alpha),
-                float(beta),
-                float(nu),
-                float(rho),
+                strike,
+                forward,
+                tau,
+                alpha,
+                beta,
+                nu,
+                rho,
             )
         )
     except RuntimeError:

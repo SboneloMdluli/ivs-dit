@@ -170,14 +170,14 @@ class UNet(DenoisingBackbone):
         )
 
         attn_levels = set(int(level) for level in attention_levels)
-        channels: list[int] = [base_channels * int(m) for m in channel_mults]
+        channels = [base_channels * int(m) for m in channel_mults]
         self.num_res_blocks = int(num_res_blocks)
         self.num_levels = len(channels)
         self._channels = tuple(channels)
 
         self.down_blocks = nn.ModuleList()
         self.down_attn = nn.ModuleList()
-        self.do_down: list[bool] = []
+        self.do_down = []
         prev_c = base_channels
         for level, c in enumerate(channels):
             stage = nn.ModuleList()
@@ -256,6 +256,7 @@ class UNet(DenoisingBackbone):
                 )
 
             # Concatenate the conditioning surface to the noisy input
+            # noisy surface, conditining
             x = torch.cat([x, cond.to(dtype=x.dtype, device=x.device)], dim=1)
 
         t_emb = self.time_embedding(t)

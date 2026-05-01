@@ -57,9 +57,11 @@ class VPNoiseScheduler(nn.Module):
         if schedule == "cosine":
             steps = timesteps + 1
             t = torch.linspace(0, timesteps, steps, dtype=torch.float32)
+
             alphas_cumprod = torch.cos(((t / timesteps) + cosine_s) / (1 + cosine_s) * torch.pi / 2) ** 2
             alpha_bar = alphas_cumprod / alphas_cumprod[0]
             betas = 1 - (alpha_bar[1:] / alpha_bar[:-1])
+
             return torch.clamp(betas, 1e-8, 0.999)
         raise ValueError(f"Unknown schedule: {schedule}")
 
@@ -124,7 +126,11 @@ class VPNoiseScheduler(nn.Module):
         elif t.dim() == 0:
             t = t.expand(x0.shape[0])
         t = t.to(dtype=torch.long, device=x0.device)
+
+        # Extract alpha_bar for the given timesteps
         alpha_bar_t = self.alpha_bar[t].view(-1, *([1] * (x0.dim() - 1)))
+
+        # x_t = sqrt(alpha_bar_t) * x0 + sqrt(1 - alpha_bar_t) * noise
         return torch.sqrt(alpha_bar_t) * x0 + torch.sqrt(1.0 - alpha_bar_t) * noise
 
     def forward_process(

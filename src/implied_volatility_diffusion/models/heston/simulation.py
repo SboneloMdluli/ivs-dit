@@ -31,10 +31,12 @@ def milstein_step(
     dt_f = float(dt)
     if dt_f <= 0.0:
         raise ValueError("dt must be positive")
+
     sqrt_dt = math.sqrt(dt_f)
     rho_c = max(-1.0, min(1.0, float(rho)))
     z1, z2 = rng.standard_normal(2)
 
+    # Correlated Brownian increments
     d_w1 = sqrt_dt * z1
     d_w2 = rho_c * sqrt_dt * z1 + math.sqrt(max(0.0, 1.0 - rho_c**2)) * sqrt_dt * z2
 
@@ -43,7 +45,9 @@ def milstein_step(
     drift_v = kappa * (theta - v_pos) * dt_f
     diff_v = sigma_v * sqrt_v * d_w2
     milstein_corr = 0.25 * sigma_v**2 * (d_w2**2 - dt_f)
-    v_next = max(v_pos + drift_v + diff_v + milstein_corr, 0.0)
 
+    # variance must be non-negative
+    v_next = max(v_pos + drift_v + diff_v + milstein_corr, 0.0)
+    # log-price can be negative
     log_s_next = math.log(float(s)) + (float(r) - float(q) - 0.5 * v_pos) * dt_f + sqrt_v * d_w1
     return float(math.exp(log_s_next)), float(v_next)

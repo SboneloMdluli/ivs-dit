@@ -1,5 +1,4 @@
-"""Tests for the U-Net's previous-IVS conditioning path.
-"""
+"""Tests for the U-Net's previous-IVS conditioning path."""
 
 import pytest
 import torch
@@ -54,7 +53,6 @@ def test_conditional_unet_uses_cond_and_preserves_shape() -> None:
     # Different conditioning surfaces must produce different denoiser outputs;
     # otherwise the concat path is dead.
     assert not torch.allclose(y_a, y_b)
-
 
 
 def test_conditional_unet_rejects_mismatched_spatial_shape() -> None:
