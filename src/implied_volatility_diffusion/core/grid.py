@@ -1,7 +1,5 @@
 """Grid axes built from a ``{start_point, step, end_point}`` config dict."""
 
-from __future__ import annotations
-
 from typing import Any, Mapping
 
 import numpy as np
@@ -16,10 +14,12 @@ def build_grid_axis(spec: Mapping[str, Any]) -> np.ndarray:
     start = float(spec["start_point"])
     step = float(spec["step"])
     end = float(spec["end_point"])
+
     if step <= 0.0:
         raise ValueError("grid step must be positive")
     if end + 1e-15 < start:
         raise ValueError("end_point must be >= start_point")
+
     pts: list[float] = [start]
     tol = 1e-12 * max(1.0, abs(end))
     while True:

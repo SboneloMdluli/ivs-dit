@@ -1,7 +1,5 @@
 """Heston :class:`VolModel` adapter (NumPy implementation)."""
 
-from __future__ import annotations
-
 import math
 from dataclasses import dataclass
 from typing import Any, Mapping
@@ -20,7 +18,7 @@ class HestonCosSettings:
     """COS-pricer hyperparameters pulled from the config."""
 
     n_terms_base: int = 1024
-    truncation_L: float = 14.0
+    truncation_l: float = 14.0
     short_tau_ref: float = 0.25
     n_terms_max: int = 4096
 
@@ -29,7 +27,7 @@ class HestonCosSettings:
         section = cfg.get("heston_cos_pricer") or cfg.get("cos") or {}
         return cls(
             n_terms_base=int(section.get("n_terms", 1024)),
-            truncation_L=float(section.get("truncation_L", 14.0)),
+            truncation_l=float(section.get("truncation_l", 14.0)),
             short_tau_ref=float(section.get("short_tau_tau_ref", 0.25)),
             n_terms_max=int(section.get("n_terms_max", 4096)),
         )
@@ -152,7 +150,7 @@ class HestonModel:
                             v_price,
                             q,
                             n_terms,
-                            self.cos.truncation_L,
+                            self.cos.truncation_l,
                         )
                         for kv in strikes
                     ],

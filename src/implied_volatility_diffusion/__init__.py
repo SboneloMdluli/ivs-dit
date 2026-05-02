@@ -19,6 +19,7 @@ from implied_volatility_diffusion.core.unified_grid import (
     resample_batch_to_unified_grid,
     resample_to_unified_grid,
 )
+from implied_volatility_diffusion.diffusion.noise_scheduler import VPNoiseScheduler
 from implied_volatility_diffusion.iv_surface import (
     grid_axes,
     implied_vol_surface_on_grid,
@@ -32,7 +33,6 @@ from implied_volatility_diffusion.models.heston.simulation import (
     is_feller_satisfied,
     milstein_step,
 )
-from implied_volatility_diffusion.noise_scheduler import VPNoiseScheduler
 from implied_volatility_diffusion.synthetic.goals import (
     HESTON_GOAL_YAML,
     HestonIvGoal,
@@ -70,6 +70,37 @@ from implied_volatility_diffusion.synthetic.sabr import (
     lhs_sabr_params,
     lhs_sabr_params_multi_batch,
 )
+
+_diffusion_exports = []
+try:
+    from implied_volatility_diffusion.diffusion import (
+        ArbitragePenalty,
+        ArbitrageWeights,
+        DenoisingBackbone,
+        DiffusionLoss,
+        DiffusionLossConfig,
+        DiffusionModel,
+        ReverseDiffusion,
+        UNet,
+        build_backbone,
+        register_backbone,
+    )
+
+    _diffusion_exports = [
+        "ArbitragePenalty",
+        "ArbitrageWeights",
+        "DenoisingBackbone",
+        "DiffusionLoss",
+        "DiffusionLossConfig",
+        "DiffusionModel",
+        "ReverseDiffusion",
+        "UNet",
+        "build_backbone",
+        "register_backbone",
+    ]
+except (ImportError, ModuleNotFoundError):
+    # Allow legacy modules to import while diffusion stack is in-progress.
+    pass
 
 __all__ = [
     "__version__",
@@ -122,3 +153,5 @@ __all__ = [
     "milstein_step",
     "repair_calendar_monotone",
 ]
+
+__all__.extend(_diffusion_exports)

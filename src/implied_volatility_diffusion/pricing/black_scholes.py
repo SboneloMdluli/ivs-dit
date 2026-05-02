@@ -1,7 +1,5 @@
 """Black-Scholes-Merton call price and vega helpers."""
 
-from __future__ import annotations
-
 import math
 
 import numpy as np

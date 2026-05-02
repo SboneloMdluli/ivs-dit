@@ -1,7 +1,5 @@
 """SABR simulation step used for sequential surfaces."""
 
-from __future__ import annotations
-
 import math
 
 import numpy as np

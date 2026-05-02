@@ -3,8 +3,6 @@
 LHS generation stays on NumPy (via ``scipy.stats.qmc``) and returns ``np.ndarray``.
 """
 
-from __future__ import annotations
-
 from typing import Any, Mapping, Sequence
 
 import numpy as np

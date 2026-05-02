@@ -1,7 +1,3 @@
-"""NumPy no-arbitrage checks for implied-vol surfaces."""
-
-from __future__ import annotations
-
 import numpy as np
 
 from implied_volatility_diffusion.arbitrage_checks.report import ArbitrageReport
@@ -40,14 +36,9 @@ def check_iv_surface_arbitrage(
 ) -> ArbitrageReport:
     """Check Roper / Gatheral no-arbitrage conditions for one IV surface."""
     iv_t = np.asarray(iv, dtype=float)
-    if iv_t.ndim != 2:
-        raise ValueError(f"iv must be 2D (n_moneyness, n_tau); got shape {tuple(iv_t.shape)}")
     m_t = np.asarray(moneyness, dtype=float).reshape(-1)
     t_t = np.asarray(tau, dtype=float).reshape(-1)
-    if iv_t.shape != (m_t.size, t_t.size):
-        raise ValueError(
-            f"iv shape {tuple(iv_t.shape)} does not match (len(moneyness)={int(m_t.size)}, len(tau)={int(t_t.size)})"
-        )
+
     if bool(np.any(np.diff(m_t) <= 0.0)):
         raise ValueError("moneyness must be strictly increasing")
     if bool(np.any(np.diff(t_t) <= 0.0)):
@@ -129,8 +120,6 @@ def check_iv_surfaces_arbitrage(
 ) -> list[ArbitrageReport]:
     """Run :func:`check_iv_surface_arbitrage` over every leading-axis slice."""
     iv_t = np.asarray(iv, dtype=float)
-    if iv_t.ndim < 2:
-        raise ValueError(f"iv must have at least 2 dims; got shape {tuple(iv_t.shape)}")
     m_t = np.asarray(moneyness, dtype=float).reshape(-1)
     t_t = np.asarray(tau, dtype=float).reshape(-1)
     leading = iv_t.shape[:-2]

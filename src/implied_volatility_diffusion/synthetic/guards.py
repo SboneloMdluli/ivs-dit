@@ -1,7 +1,5 @@
 """Arbitrage guard policies for synthetic IV surfaces."""
 
-from __future__ import annotations
-
 import warnings
 from dataclasses import dataclass, replace
 from typing import Any, Iterable, Literal, Mapping

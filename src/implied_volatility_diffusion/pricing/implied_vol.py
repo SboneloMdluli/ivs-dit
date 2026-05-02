@@ -1,7 +1,5 @@
 """Implied-vol inversion with Newton and scalar fallback."""
 
-from __future__ import annotations
-
 import math
 
 import numpy as np
@@ -175,8 +173,10 @@ def implied_vol_from_prices(
     for _ in range(max_newton_steps):
         diff = bs_call_price(s_b, k_b, t_b, r_b, sigma, q_b) - p_b
         converged |= np.abs(diff) < newton_tol
+
         if bool(np.all(converged)):
             break
+
         vega = bs_call_vega(s_b, k_b, t_b, r_b, sigma, q_b)
         safe_vega = np.where(vega > min_vega, vega, min_vega)
         sigma_next = np.clip(sigma - diff / safe_vega, sigma_lo, sigma_hi)
@@ -189,12 +189,12 @@ def implied_vol_from_prices(
             tup = tuple(int(i) for i in idx)
             try:
                 sigma[tup] = implied_volatility(
-                    float(p_b[tup]),
-                    float(s_b[tup]),
-                    float(k_b[tup]),
-                    float(t_b[tup]),
-                    float(r_b[tup]),
-                    float(q_b[tup]),
+                    p_b[tup],
+                    s_b[tup],
+                    k_b[tup],
+                    t_b[tup],
+                    r_b[tup],
+                    q_b[tup],
                     sigma_lo=sigma_lo,
                     sigma_hi=sigma_hi,
                 )

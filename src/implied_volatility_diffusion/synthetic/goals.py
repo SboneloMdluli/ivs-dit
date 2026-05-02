@@ -1,7 +1,5 @@
 """Preset Heston-IV-surface YAML overlays."""
 
-from __future__ import annotations
-
 from enum import Enum
 
 

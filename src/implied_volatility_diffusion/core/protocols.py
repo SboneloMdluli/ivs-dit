@@ -1,7 +1,5 @@
 """Protocols that decouple pricing models from surface assembly."""
 
-from __future__ import annotations
-
 from typing import Any, Mapping, Protocol, runtime_checkable
 
 import numpy as np
@@ -11,8 +9,7 @@ import numpy as np
 class ModelCallPricer(Protocol):
     """Scalar (strike, tau) -> discounted call price. Kept for legacy hooks."""
 
-    def __call__(self, strike: float, tau: float) -> float:  # pragma: no cover - structural typing
-        ...
+    def __call__(self, strike: float, tau: float) -> float: ...
 
 
 @runtime_checkable
@@ -29,18 +26,12 @@ class ImpliedVolInverter(Protocol):
         *,
         dividend_yield: float = 0.0,
         **kwargs: Any,
-    ) -> float:  # pragma: no cover - structural typing
-        ...
+    ) -> float: ...
 
 
 @runtime_checkable
 class VolModel(Protocol):
-    """Stochastic / local-vol model that can price a batch of European calls.
-
-    Implementations should be **pure**: they receive a parameter batch plus
-    grid axes and return a NumPy array of call prices. They must not read
-    global state (config is passed explicitly via ``__init__``).
-    """
+    """Stochastic / local-vol model that can price a batch of European calls."""
 
     #: Order of the parameter columns the model expects in ``params``.
     param_order: tuple[str, ...]
@@ -75,8 +66,7 @@ class VolModel(Protocol):
 class RangesConfig(Protocol):
     """Config section describing parameter box ranges used by LHS sampling."""
 
-    def __getitem__(self, key: str) -> Any:  # pragma: no cover - structural typing
-        ...
+    def __getitem__(self, key: str) -> Any: ...
 
 
 # Small alias used by type hints below.

@@ -1,10 +1,8 @@
 """Heston COS pricer wrappers without torch utility dependencies."""
 
-from __future__ import annotations
-
 import numpy as np
 
-from implied_volatility_diffusion.models.heston.heston_cos import heston_call_cos as _heston_call_cos_numpy
+from implied_volatility_diffusion.models.heston.heston_cos import heston_call_cos as _heston_call_cos_impl
 
 
 def heston_call_cos_batch(
@@ -19,25 +17,25 @@ def heston_call_cos_batch(
     v0: float,
     dividend_yield: float = 0.0,
     n_terms: int = 1024,
-    truncation_L: float = 14.0,
+    truncation_l: float = 14.0,
 ) -> np.ndarray:
     """Batched Heston call price over NumPy strikes at one ``tau``."""
     k_arr = np.asarray(strikes, dtype=float).reshape(-1)
     return np.array(
         [
-            _heston_call_cos_numpy(
-                float(spot),
-                float(kv),
-                float(tau),
-                float(rate),
-                float(kappa),
-                float(theta),
-                float(sigma),
-                float(rho),
-                float(v0),
+            _heston_call_cos_impl(
+                spot,
+                kv,
+                tau,
+                rate,
+                kappa,
+                theta,
+                sigma,
+                rho,
+                v0,
                 dividend_yield=float(dividend_yield),
                 n_terms=int(n_terms),
-                truncation_L=float(truncation_L),
+                truncation_l=float(truncation_l),
             )
             for kv in k_arr
         ],
@@ -57,22 +55,22 @@ def heston_call_cos(
     v0: float,
     dividend_yield: float = 0.0,
     n_terms: int = 1024,
-    truncation_L: float = 14.0,
+    truncation_l: float = 14.0,
 ) -> float:
     """Scalar Heston call price via COS."""
     return float(
-        _heston_call_cos_numpy(
-            float(spot),
-            float(strike),
-            float(tau),
-            float(rate),
-            float(kappa),
-            float(theta),
-            float(sigma),
-            float(rho),
-            float(v0),
-            dividend_yield=float(dividend_yield),
+        _heston_call_cos_impl(
+            spot=spot,
+            strike=strike,
+            tau=tau,
+            rate=rate,
+            kappa=kappa,
+            theta=theta,
+            sigma=sigma,
+            rho=rho,
+            v0=v0,
+            dividend_yield=dividend_yield,
             n_terms=int(n_terms),
-            truncation_L=float(truncation_L),
+            truncation_l=float(truncation_l),
         )
     )

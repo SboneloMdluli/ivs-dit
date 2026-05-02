@@ -5,8 +5,6 @@ and return a :class:`SurfaceBatch`. They remove the need for recipe-specific
 orchestrators to live in the same module as model-specific maths.
 """
 
-from __future__ import annotations
-
 from typing import Any, Mapping
 
 import numpy as np

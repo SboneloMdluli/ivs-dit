@@ -1,7 +1,5 @@
 """Tests for the full historic IV surface pipeline (smoothing -> interp/extrap -> unified grid)."""
 
-from __future__ import annotations
-
 import numpy as np
 import pandas as pd
 import pytest

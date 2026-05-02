@@ -94,14 +94,15 @@ def _heston_log_moments_truncation(
         + 4.0 * theta * np.exp(-kappa * tau)
         + 4.0 * kappa * theta
     )
+
     c2_formula = (theta / (8.0 * k3)) * (term_bracket + theta * (2.0 * v0 - theta) * tau)
     integrated_var = theta * tau + (v0 - theta) * (1.0 - np.exp(-kappa * tau)) / kappa
     c2_real = float(np.real(c2_formula))
     c2_lo = max(float(integrated_var), 1e-16)
     c2_hi = max(c2_lo * 2.0, c2_lo + 0.25)
     c2 = min(max(c2_real if np.isfinite(c2_real) else c2_lo, c2_lo), c2_hi)
-    # [a, b] := [c1 - L * sqrt(c2 ), c1 + L * sqrt(c2))]
 
+    # [a, b] := [c1 - L * sqrt(c2 ), c1 + L * sqrt(c2))]
     width = L * np.sqrt(c2)
     a = float(c1 - width)
     b = float(c1 + width)
@@ -119,7 +120,7 @@ def _widen_truncation_for_strike(
     integrated_var: float,
     v0: float,
     tau: float,
-    truncation_L: float,
+    truncation_l: float,
 ) -> tuple[float, float]:
     """Pad the COS log-spot truncation interval around the strike.
 
@@ -127,7 +128,7 @@ def _widen_truncation_for_strike(
     and breaks implied-vol inversion. This widens the interval symmetrically in log space.
     """
     std_ln = math.sqrt(max(integrated_var, v0 * tau, 1e-20))
-    pad = max(float(truncation_L), 6.0) * std_ln
+    pad = max(float(truncation_l), 6.0) * std_ln
     log_k = math.log(strike)
     a_w = min(a, log_k - pad)
     b_w = max(b, log_k + pad)
@@ -180,14 +181,14 @@ def heston_call_cos(
     v0: float,
     dividend_yield: float = 0.0,
     n_terms: int = 1024,
-    truncation_L: float = 14.0,
+    truncation_l: float = 14.0,
 ) -> float:
     """European call price under Heston via COS (Fang & Oosterlee)."""
     if tau <= 0.0:
         return float(max(spot - strike, 0.0))
 
     a, b, integrated_var = _heston_log_moments_truncation(
-        tau, spot, rate, dividend_yield, kappa, theta, sigma, rho, v0, truncation_L
+        tau, spot, rate, dividend_yield, kappa, theta, sigma, rho, v0, truncation_l
     )
     a, b = _widen_truncation_for_strike(
         a,
@@ -196,7 +197,7 @@ def heston_call_cos(
         integrated_var=integrated_var,
         v0=v0,
         tau=tau,
-        truncation_L=truncation_L,
+        truncation_l=truncation_l,
     )
     k = np.arange(n_terms, dtype=float)
     u = k * np.pi / (b - a)
@@ -204,5 +205,7 @@ def heston_call_cos(
     exp_shift = np.exp(-1j * u * a)
     uk = _call_cos_coefficients(strike, a, b, n_terms)
     terms = np.real(phi * exp_shift) * uk
-    price = float(np.exp(-rate * tau) * np.sum(terms))
-    return max(price, 0.0)
+
+    # discount the price
+    price = np.exp(-rate * tau) * np.sum(terms)
+    return max(float(price), 0.0)

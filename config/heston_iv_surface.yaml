@@ -42,7 +42,7 @@ implied_vol:
 # Heston-COS (Fang & Oosterlee)
 heston_cos_pricer:
   n_terms: 1024
-  truncation_L: 14.0
+  truncation_l: 14.0
   short_tau_tau_ref: 0.25
   n_terms_max: 6144
 

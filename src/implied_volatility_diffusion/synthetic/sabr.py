@@ -1,7 +1,5 @@
 """SABR + LHS recipes (batched and sequential)."""
 
-from __future__ import annotations
-
 from typing import Any, Mapping
 
 import matplotlib.pyplot as plt

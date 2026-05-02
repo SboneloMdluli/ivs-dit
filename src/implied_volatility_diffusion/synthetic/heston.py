@@ -4,8 +4,6 @@ This module replaces ``synthetic_ivs_generator/heston_iv_surface.py``. The
 legacy module now re-exports these names.
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 from typing import Any, Mapping
 

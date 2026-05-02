@@ -1,7 +1,5 @@
 """Unified `(k, tau)` grid and resampling helpers."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping

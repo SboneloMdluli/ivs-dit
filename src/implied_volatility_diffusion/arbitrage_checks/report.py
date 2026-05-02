@@ -1,7 +1,3 @@
-"""Public dataclass describing a single surface's no-arbitrage diagnostics."""
-
-from __future__ import annotations
-
 from dataclasses import dataclass
 
 

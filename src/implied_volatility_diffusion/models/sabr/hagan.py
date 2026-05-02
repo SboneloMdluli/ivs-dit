@@ -1,7 +1,5 @@
 """SABR lognormal (Hagan 2002) implied vol."""
 
-from __future__ import annotations
-
 import math
 
 import numpy as np

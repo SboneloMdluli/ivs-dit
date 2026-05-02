@@ -1,7 +1,5 @@
 """Registry of named volatility-model factories."""
 
-from __future__ import annotations
-
 from typing import Any, Callable, Iterable, Mapping
 
 from implied_volatility_diffusion.core.protocols import VolModel
