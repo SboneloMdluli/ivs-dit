@@ -12,8 +12,8 @@ This note describes how to use the SABR (Hagan lognormal) implementation in this
 
 Implementation lives in:
 
-- `src/implied_volatility_diffusion/synthetic_ivs_generator/sabr.py` — `sabr_lognormal_iv`, `calibrate_sabr_to_implied_vols`
-- `src/implied_volatility_diffusion/synthetic_ivs_generator/sabr_iv_surface.py` — `calibrate_params_for_expiries`, `implied_vol_surface_from_calibrated_slices`
+- `src/implied_volatility_diffusion/models/sabr/hagan.py` — `sabr_hagan_lognormal_iv`
+- `src/implied_volatility_diffusion/models/sabr/calibration.py` — `calibrate_sabr_to_implied_vols`, `calibrate_params_for_expiries`, `implied_vol_surface_from_calibrated_slices`
 
 ## Environment
 
@@ -35,7 +35,7 @@ Assume one valuation date with:
 
 ```python
 import numpy as np
-from implied_volatility_diffusion.synthetic_ivs_generator.sabr_iv_surface import (
+from implied_volatility_diffusion.models.sabr import (
     calibrate_params_for_expiries,
     implied_vol_surface_from_calibrated_slices,
 )
@@ -84,7 +84,7 @@ iv_surface = implied_vol_surface_from_calibrated_slices(
 # iv_surface[i, j] is IV at moneyness[i], tau_axis[j]
 ```
 
-`implied_vol_surface_from_calibrated_slices` assigns each grid maturity \(\tau\) the calibrated triple from the **nearest** market expiry in `expiry_taus`, then evaluates `sabr_lognormal_iv` on the grid. Adjust `expiry_taus` density or extend this mapping if you need smoother term-structure stitching between market pillars.
+`implied_vol_surface_from_calibrated_slices` assigns each grid maturity \(\tau\) the calibrated triple from the **nearest** market expiry in `expiry_taus`, then evaluates `sabr_hagan_lognormal_iv` on the grid. Adjust `expiry_taus` density or extend this mapping if you need smoother term-structure stitching between market pillars.
 
 ## Single expiry: calibrate one smile only
 
@@ -92,9 +92,9 @@ If you only need one tenor \(\tau\):
 
 ```python
 import numpy as np
-from implied_volatility_diffusion.synthetic_ivs_generator.sabr import (
+from implied_volatility_diffusion.models.sabr import (
     calibrate_sabr_to_implied_vols,
-    sabr_lognormal_iv,
+    sabr_hagan_lognormal_iv,
 )
 
 spot, r, q, tau = 100.0, 0.03, 0.0, 0.5
@@ -111,16 +111,10 @@ alpha, rho, nu, result = calibrate_sabr_to_implied_vols(
 
 dense_strikes = np.linspace(75.0, 125.0, 101)
 iv_interp = np.array(
-    [sabr_lognormal_iv(forward, float(k), tau, alpha, beta, rho, nu) for k in dense_strikes],
+    [sabr_hagan_lognormal_iv(forward, float(k), tau, alpha, beta, rho, nu) for k in dense_strikes],
     dtype=float,
 )
 ```
-
-## Historic cleaned data (SABR interpolation)
-
-### Where the data is cleaned
-
-Cleaning happens in the EOD pipeline **`src/implied_volatility_diffusion/data/data_pipeline.py`**: each raw file is processed with `process_file`, which ends with **`clean_data`** (filters on valid `mid`, `tau`, `iv`, positive `strike` / `underlying_last`, bid–ask consistency, and optional `rel_spread`). Concatenated batches are written to **`data/processed/processed.parquet`** by default (`processed_output_path` in `config/data_pipeline_config.yaml`). From the repository root, with the package on `PYTHONPATH` or installed editable, run **`python -m implied_volatility_diffusion.data.data_pipeline`** to rebuild that parquet (or call `build_dataset` with the same paths).
 
 ### Loading cleaned data
 
