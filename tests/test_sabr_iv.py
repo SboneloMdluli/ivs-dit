@@ -40,7 +40,7 @@ def test_hagan_wing_differs_from_atm() -> None:
     F, T = 100.0, 0.5
     iv_atm = sabr_hagan_lognormal_iv(F, F, T, 0.25, 0.5, -0.3, 0.5)
     iv_put = sabr_hagan_lognormal_iv(F, 85.0, T, 0.25, 0.5, -0.3, 0.5)
-    assert abs(iv_put - iv_atm) > 1e-4s
+    assert abs(iv_put - iv_atm) > 1e-4
 
 
 def test_calibrate_recovers_synthetic_surface() -> None:
