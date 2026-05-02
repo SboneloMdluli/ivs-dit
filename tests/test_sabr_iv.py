@@ -48,15 +48,10 @@ def test_calibrate_recovers_synthetic_surface() -> None:
     alpha_t, rho_t, nu_t = 0.22, -0.35, 0.45
     strikes = np.linspace(80.0, 120.0, 12)
     mkt = np.array(
-        [
-            sabr_hagan_lognormal_iv(F, float(k), T, alpha_t, beta, rho_t, nu_t)
-            for k in strikes
-        ],
+        [sabr_hagan_lognormal_iv(F, float(k), T, alpha_t, beta, rho_t, nu_t) for k in strikes],
         dtype=float,
     )
-    alpha, rho, nu, res = calibrate_sabr_to_implied_vols(
-        F, T, strikes, mkt, beta=beta, initial_guess=(0.2, 0.0, 0.4)
-    )
+    alpha, rho, nu, res = calibrate_sabr_to_implied_vols(F, T, strikes, mkt, beta=beta, initial_guess=(0.2, 0.0, 0.4))
     assert res.success
     assert abs(alpha - alpha_t) < 0.05
     assert abs(rho - rho_t) < 0.15
@@ -105,9 +100,7 @@ def test_calibrate_params_for_expiries_and_grid_map() -> None:
         strikes_sets.append(ks)
         iv_sets.append(ivs)
         rows.append([alpha_t, rho_t, nu_t])
-    params_fit, _ = calibrate_params_for_expiries(
-        spot, r, q, taus, strikes_sets, iv_sets, beta=beta
-    )
+    params_fit, _ = calibrate_params_for_expiries(spot, r, q, taus, strikes_sets, iv_sets, beta=beta)
     assert params_fit.shape == (2, 3)
     m = np.array([0.9, 1.0, 1.1], dtype=float)
     tau_grid = np.array([0.3, 0.6, 0.9], dtype=float)
