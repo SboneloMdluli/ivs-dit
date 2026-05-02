@@ -72,7 +72,9 @@ def test_load_config_and_lhs() -> None:
 def test_lhs_multi_batch_and_log_uniform() -> None:
     root = Path(__file__).resolve().parents[1]
     cfg = implied_volatility_diffusion.synthetic.heston.load_heston_iv_surface_config(root / "config")
-    p1 = implied_volatility_diffusion.synthetic.heston.lhs_heston_params_multi_batch(cfg, n_samples=8, n_batches=2, seed=1, seed_stride=999)
+    p1 = implied_volatility_diffusion.synthetic.heston.lhs_heston_params_multi_batch(
+        cfg, n_samples=8, n_batches=2, seed=1, seed_stride=999
+    )
     assert p1.shape == (16, 6)
     assert np.all(p1[:, 0] > 0) and np.all(p1[:, 3] > 0)  # v0, theta > 0
 
@@ -87,14 +89,18 @@ def test_sequential_ivs_shape_and_state_override() -> None:
             "sequential_ivs": {"n_steps": 3, "dt": 0.01},
         },
     )
-    params, m, tau, iv = implied_volatility_diffusion.synthetic.heston.implied_vol_surfaces_heston_sequential_lhs(cfg, n_samples=2, seed=91)
+    params, m, tau, iv = implied_volatility_diffusion.synthetic.heston.implied_vol_surfaces_heston_sequential_lhs(
+        cfg, n_samples=2, seed=91
+    )
     assert params.shape == (2, 6)
     assert iv.shape == (2, 3, len(m), len(tau))
     assert np.all(np.isfinite(iv)) and np.all(iv > 0)
 
     row = implied_volatility_diffusion.synthetic.heston.lhs_heston_params(cfg, n_samples=1, seed=5)[0]
     _, _, iv_a = implied_volatility_diffusion.synthetic.heston.implied_vol_surface_for_heston_params(row, cfg)
-    _, _, iv_b = implied_volatility_diffusion.synthetic.heston.implied_vol_surface_for_heston_params(row, cfg, spot=100.0, inst_var=float(row[0]))
+    _, _, iv_b = implied_volatility_diffusion.synthetic.heston.implied_vol_surface_for_heston_params(
+        row, cfg, spot=100.0, inst_var=float(row[0])
+    )
     assert np.allclose(iv_a, iv_b)
 
 
@@ -102,7 +108,9 @@ def test_lhs_satisfies_feller() -> None:
     """LHS draws clip ``sigma_v`` so ``2*kappa*theta >= sigma_v^2`` for every row."""
     root = Path(__file__).resolve().parents[1]
     cfg = implied_volatility_diffusion.synthetic.heston.load_heston_iv_surface_config(root / "config")
-    p = implied_volatility_diffusion.synthetic.heston.lhs_heston_params_multi_batch(cfg, n_samples=64, n_batches=2, seed=7)
+    p = implied_volatility_diffusion.synthetic.heston.lhs_heston_params_multi_batch(
+        cfg, n_samples=64, n_batches=2, seed=7
+    )
     sigma, theta, kappa = p[:, 2], p[:, 3], p[:, 4]
     assert np.all(2.0 * kappa * theta + 1e-15 >= sigma * sigma)
 
@@ -111,7 +119,9 @@ def test_lhs_satisfies_feller() -> None:
 def test_lhs_surfaces_smoke() -> None:
     root = Path(__file__).resolve().parents[1]
     cfg = implied_volatility_diffusion.synthetic.heston.load_heston_iv_surface_config(root / "config")
-    _, m, tau, iv = implied_volatility_diffusion.synthetic.heston.implied_vol_surfaces_heston_lhs(cfg, n_samples=1, n_batches=1, seed=0)
+    _, m, tau, iv = implied_volatility_diffusion.synthetic.heston.implied_vol_surfaces_heston_lhs(
+        cfg, n_samples=1, n_batches=1, seed=0
+    )
     assert iv.shape == (1, len(m), len(tau))
     assert np.all(np.isfinite(iv))
     assert np.all(iv > 0)
