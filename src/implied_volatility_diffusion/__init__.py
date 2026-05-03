@@ -74,16 +74,17 @@ from implied_volatility_diffusion.synthetic.sabr import (
 _diffusion_exports = []
 try:
     from implied_volatility_diffusion.diffusion import (
-        ArbitragePenalty,
-        ArbitrageWeights,
-        DenoisingBackbone,
-        DiffusionLoss,
-        DiffusionLossConfig,
-        DiffusionModel,
-        ReverseDiffusion,
-        UNet,
-        build_backbone,
-        register_backbone,
+        ArbitragePenalty as ArbitragePenalty,
+        ArbitrageWeights as ArbitrageWeights,
+        DenoisingBackbone as DenoisingBackbone,
+        DiffusionLoss as DiffusionLoss,
+        DiffusionLossConfig as DiffusionLossConfig,
+        DiffusionModel as DiffusionModel,
+        ReverseDiffusion as ReverseDiffusion,
+        UNet as UNet,
+        GridTransformer as GridTransformer,
+        build_backbone as build_backbone,
+        register_backbone as register_backbone,
     )
 
     _diffusion_exports = [
@@ -95,6 +96,7 @@ try:
         "DiffusionModel",
         "ReverseDiffusion",
         "UNet",
+        "GridTransformer",
         "build_backbone",
         "register_backbone",
     ]

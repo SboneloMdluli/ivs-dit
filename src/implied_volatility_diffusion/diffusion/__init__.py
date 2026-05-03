@@ -13,6 +13,7 @@ from implied_volatility_diffusion.diffusion.backbones import (
     SinusoidalTimeEmbedding,
     TimeEmbeddingMLP,
     UNet,
+    GridTransformer,
     build_backbone,
     iter_backbone_names,
     register_backbone,
@@ -55,4 +56,5 @@ __all__ = [
     "plot_surface_comparison",
     "regenerate_until_arb_free",
     "torch_bs_call",
+    "GridTransformer",
 ]

@@ -18,6 +18,10 @@ from implied_volatility_diffusion.diffusion.backbones.unet import (
     UNet,
 )
 
+from implied_volatility_diffusion.diffusion.backbones.transformer import (
+    GridTransformer,
+)
+
 __all__ = [
     "BackboneFactory",
     "DenoisingBackbone",
@@ -30,4 +34,5 @@ __all__ = [
     "get_backbone_factory",
     "iter_backbone_names",
     "register_backbone",
+    "GridTransformer",
 ]
