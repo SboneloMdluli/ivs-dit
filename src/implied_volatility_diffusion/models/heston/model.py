@@ -1,4 +1,4 @@
-"""Heston :class:`VolModel` adapter (NumPy implementation)."""
+"""Heston :class:`VolModel`"""
 
 import math
 from dataclasses import dataclass
@@ -11,6 +11,42 @@ from implied_volatility_diffusion.models.heston.cos import heston_call_cos
 from implied_volatility_diffusion.pricing.implied_vol import implied_vol_from_prices
 
 HESTON_PARAM_ORDER: tuple[str, ...] = ("v0", "rho", "sigma", "theta", "kappa", "r")
+
+
+def _repair_wing_monotonicity(
+    iv_slice: np.ndarray,
+    *,
+    sigma_lo: float = 1e-4,
+    sigma_hi: float = 10.0,
+) -> np.ndarray:
+    """Enforce non-decreasing IV away from the smile minimum per tau column."""
+    out = iv_slice.copy()
+    n_m, n_t = out.shape
+
+    lo_fence = sigma_lo * 2.0
+    hi_fence = sigma_hi * 0.9
+
+    for j in range(n_t):
+        col = out[:, j]
+        reliable = np.isfinite(col) & (col > lo_fence) & (col < hi_fence)
+
+        if reliable.sum() < 2:
+            finite = np.isfinite(col) & (col > 0)
+            if finite.sum() < 2:
+                continue
+            reliable = finite
+
+        vals = np.where(reliable, col, np.inf)
+        min_idx = int(np.argmin(vals))
+
+        for i in range(min_idx - 1, -1, -1):
+            if not reliable[i] or col[i] < col[i + 1]:
+                col[i] = col[i + 1]
+        for i in range(min_idx + 1, n_m):
+            if not reliable[i] or col[i] < col[i - 1]:
+                col[i] = col[i - 1]
+
+    return out
 
 
 @dataclass(frozen=True)
@@ -40,6 +76,9 @@ class ImpliedVolSettings:
     sigma_lo: float = 1e-4
     sigma_hi: float = 10.0
     tau_extrapolate_below: float = float("nan")
+    m_extrapolate_below: float = 0.0
+    m_extrapolate_above: float = float("inf")
+    repair_wings: bool = True
 
     @classmethod
     def from_config(cls, cfg: Mapping[str, Any]) -> "ImpliedVolSettings":
@@ -48,6 +87,9 @@ class ImpliedVolSettings:
             sigma_lo=float(section.get("sigma_lo", 1e-4)),
             sigma_hi=float(section.get("sigma_hi", 10.0)),
             tau_extrapolate_below=float(section.get("tau_extrapolate_below", float("nan"))),
+            m_extrapolate_below=float(section.get("m_extrapolate_below", 0.0)),
+            m_extrapolate_above=float(section.get("m_extrapolate_above", float("inf"))),
+            repair_wings=bool(section.get("repair_wings", True)),
         )
 
 
@@ -202,14 +244,35 @@ class HestonModel:
             )
             iv_surfaces[bi] = iv_bi
 
+        # Wing monotonicity repair
+        if self.iv.repair_wings:
+            for bi in range(int(iv_surfaces.shape[0])):
+                iv_surfaces[bi] = _repair_wing_monotonicity(
+                    iv_surfaces[bi],
+                    sigma_lo=self.iv.sigma_lo,
+                    sigma_hi=self.iv.sigma_hi,
+                )
+
+        # Moneyness flat-extrapolation
+        m_lo = float(self.iv.m_extrapolate_below)
+        m_hi = float(self.iv.m_extrapolate_above)
+        if m_lo > 0.0 and m.size > 0:
+            j_lo = int(np.searchsorted(m, m_lo, side="left"))
+            if 0 < j_lo < m.size:
+                iv_surfaces[..., :j_lo, :] = iv_surfaces[..., j_lo : j_lo + 1, :]
+        if math.isfinite(m_hi) and m.size > 0:
+            j_hi = int(np.searchsorted(m, m_hi, side="right")) - 1
+            if 0 <= j_hi < m.size - 1:
+                iv_surfaces[..., j_hi + 1 :, :] = iv_surfaces[..., j_hi : j_hi + 1, :]
+
+        # Tau flat-extrapolation for very short maturities
         thr = float(self.iv.tau_extrapolate_below)
         if math.isfinite(thr) and thr > 0.0 and t.size > 0:
-            j_ref = int(np.searchsorted(t, thr, side="left"))
-            if 0 <= j_ref < t.size:
-                mask = t + 1e-12 < thr
-                if bool(np.any(mask)):
-                    ref_col = iv_surfaces[..., j_ref : j_ref + 1]
-                    iv_surfaces[..., mask] = ref_col
+            j_ref = int(np.searchsorted(t, thr, side="right"))
+            if 0 < j_ref < t.size:
+                mask = np.arange(t.size) < j_ref
+                ref_col = iv_surfaces[..., j_ref : j_ref + 1]
+                iv_surfaces[..., mask] = ref_col
         return iv_surfaces
 
 

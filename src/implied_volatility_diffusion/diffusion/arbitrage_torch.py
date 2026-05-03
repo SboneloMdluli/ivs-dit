@@ -1,4 +1,4 @@
-"""Differentiable no-arbitrage penalties on IV surface"""
+"""Differentiable no-arbitrage penalties on IV surface."""
 
 import math
 from dataclasses import dataclass
