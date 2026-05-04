@@ -38,6 +38,10 @@ uv run pre-commit run --all-files
 - `data/`: raw and processed datasets.
 - `docs/`: focused technical documentation.
 
+## System architecture
+
+[![System architecture diagram](assets/syst_diag.svg)](assets/syst_diag.svg)
+
 ## Configuration
 
 - `[config/heston_iv_surface.yaml](config/heston_iv_surface.yaml)`: Heston market assumptions, parameter ranges, LHS, COS settings, and IV inversion settings.
@@ -50,4 +54,3 @@ uv run pre-commit run --all-files
 - `[docs/sabr_surface_generation.md](docs/sabr_surface_generation.md)`: SABR baseline generation and calibration flow.
 - `[docs/option_data_pipeline.md](docs/option_data_pipeline.md)`: historical option-data ingestion, cleaning, and feature engineering pipeline.
 - `[docs/sabr_interpolation.md](docs/sabr_interpolation.md)`: SABR interpolation walkthrough on market data.
-'
