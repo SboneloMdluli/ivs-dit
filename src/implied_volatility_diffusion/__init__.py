@@ -80,9 +80,15 @@ try:
         DiffusionLoss,
         DiffusionLossConfig,
         DiffusionModel,
+        KLAutoencoder,
+        KLAutoencoderOutput,
         ReverseDiffusion,
         UNet,
         build_backbone,
+        halving_spatial_factor,
+        latent_padded_hw,
+        latent_spatial_hw,
+        pad_surface,
         register_backbone,
     )
 
@@ -93,9 +99,15 @@ try:
         "DiffusionLoss",
         "DiffusionLossConfig",
         "DiffusionModel",
+        "KLAutoencoder",
+        "KLAutoencoderOutput",
         "ReverseDiffusion",
         "UNet",
         "build_backbone",
+        "halving_spatial_factor",
+        "latent_padded_hw",
+        "latent_spatial_hw",
+        "pad_surface",
         "register_backbone",
     ]
 except (ImportError, ModuleNotFoundError):
