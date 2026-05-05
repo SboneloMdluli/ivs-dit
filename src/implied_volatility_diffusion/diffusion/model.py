@@ -24,7 +24,7 @@ def _broadcast(value: torch.Tensor, ref: torch.Tensor) -> torch.Tensor:
 
 
 class DiffusionModel(nn.Module):
-    """The model takes / returns **unnormalized IV surfaces** in its public API.
+    """The model takes / returns **unnormalized IV surfaces**.
     Denoising happens in z-space (``z = (log(iv) - mean) / std``),
 
     Args:

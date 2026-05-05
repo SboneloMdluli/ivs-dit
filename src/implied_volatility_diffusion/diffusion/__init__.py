@@ -10,6 +10,7 @@ from implied_volatility_diffusion.diffusion.backbones import (
     SinusoidalTimeEmbedding,
     TimeEmbeddingMLP,
     UNet,
+    GridTransformer,
     build_backbone,
     iter_backbone_names,
     register_backbone,
@@ -84,4 +85,5 @@ __all__ = [
     "register_backbone",
     "symmetric_pad_widths",
     "torch_bs_call",
+    "GridTransformer",
 ]
