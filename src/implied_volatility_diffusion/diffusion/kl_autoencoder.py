@@ -94,9 +94,7 @@ class KLAutoencoder(nn.Module):
     def latent_shape(self, h: int, w: int) -> tuple[int, int]:
         return latent_spatial_hw(h, w, self.num_downsample)
 
-    def encode(
-        self, x: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor, tuple[int, int, int, int]]:
+    def encode(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, tuple[int, int, int, int]]:
         """Return ``(z, mu, pads)``; pass ``pads`` and ``orig_hw`` to :meth:`decode`."""
         if x.dim() != 4 or x.shape[1] != self.in_channels:
             raise ValueError(f"expected (B, {self.in_channels}, H, W); got {tuple(x.shape)}")

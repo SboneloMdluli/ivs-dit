@@ -7,10 +7,10 @@ from implied_volatility_diffusion.diffusion.arbitrage_torch import (
 )
 from implied_volatility_diffusion.diffusion.backbones import (
     DenoisingBackbone,
+    GridTransformer,
     SinusoidalTimeEmbedding,
     TimeEmbeddingMLP,
     UNet,
-    GridTransformer,
     build_backbone,
     iter_backbone_names,
     register_backbone,

@@ -19,6 +19,25 @@ from implied_volatility_diffusion.core.unified_grid import (
     resample_batch_to_unified_grid,
     resample_to_unified_grid,
 )
+from implied_volatility_diffusion.diffusion import (
+    ArbitragePenalty,
+    ArbitrageWeights,
+    DenoisingBackbone,
+    DiffusionLoss,
+    DiffusionLossConfig,
+    DiffusionModel,
+    GridTransformer,
+    KLAutoencoder,
+    KLAutoencoderOutput,
+    ReverseDiffusion,
+    UNet,
+    build_backbone,
+    halving_spatial_factor,
+    latent_padded_hw,
+    latent_spatial_hw,
+    pad_surface,
+    register_backbone,
+)
 from implied_volatility_diffusion.diffusion.noise_scheduler import VPNoiseScheduler
 from implied_volatility_diffusion.iv_surface import (
     grid_axes,
@@ -71,50 +90,25 @@ from implied_volatility_diffusion.synthetic.sabr import (
     lhs_sabr_params_multi_batch,
 )
 
-_diffusion_exports = []
-try:
-    from implied_volatility_diffusion.diffusion import (
-        ArbitragePenalty as ArbitragePenalty,
-        ArbitrageWeights as ArbitrageWeights,
-        DenoisingBackbone as DenoisingBackbone,
-        DiffusionLoss as DiffusionLoss,
-        DiffusionLossConfig as DiffusionLossConfig,
-        DiffusionModel as DiffusionModel,
-        GridTransformer as GridTransformer,
-        KLAutoencoder as KLAutoencoder,
-        KLAutoencoderOutput as KLAutoencoderOutput,
-        ReverseDiffusion as ReverseDiffusion,
-        UNet as UNet,
-        build_backbone as build_backbone,
-        halving_spatial_factor as halving_spatial_factor,
-        latent_padded_hw as latent_padded_hw,
-        latent_spatial_hw as latent_spatial_hw,
-        pad_surface as pad_surface,
-        register_backbone as register_backbone,
-    )
-
-    _diffusion_exports = [
-        "ArbitragePenalty",
-        "ArbitrageWeights",
-        "DenoisingBackbone",
-        "DiffusionLoss",
-        "DiffusionLossConfig",
-        "DiffusionModel",
-        "KLAutoencoder",
-        "KLAutoencoderOutput",
-        "ReverseDiffusion",
-        "UNet",
-        "GridTransformer",
-        "build_backbone",
-        "halving_spatial_factor",
-        "latent_padded_hw",
-        "latent_spatial_hw",
-        "pad_surface",
-        "register_backbone",
-    ]
-except (ImportError, ModuleNotFoundError):
-    # Allow legacy modules to import while diffusion stack is in-progress.
-    pass
+_DIFFUSION_EXPORTS = [
+    "ArbitragePenalty",
+    "ArbitrageWeights",
+    "DenoisingBackbone",
+    "DiffusionLoss",
+    "DiffusionLossConfig",
+    "DiffusionModel",
+    "GridTransformer",
+    "KLAutoencoder",
+    "KLAutoencoderOutput",
+    "ReverseDiffusion",
+    "UNet",
+    "build_backbone",
+    "halving_spatial_factor",
+    "latent_padded_hw",
+    "latent_spatial_hw",
+    "pad_surface",
+    "register_backbone",
+]
 
 __all__ = [
     "__version__",
@@ -168,4 +162,4 @@ __all__ = [
     "repair_calendar_monotone",
 ]
 
-__all__.extend(_diffusion_exports)
+__all__.extend(_DIFFUSION_EXPORTS)
