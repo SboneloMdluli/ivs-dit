@@ -21,7 +21,7 @@ from implied_volatility_diffusion.diffusion.latent_blocks import (
     groupnorm,
     pad_tensor,
 )
-from implied_volatility_diffusion.diffusion.latent_grid import (
+from implied_volatility_diffusion.diffusion.latent_grid import (    
     halving_spatial_factor,
     latent_padded_hw,
     latent_spatial_hw,

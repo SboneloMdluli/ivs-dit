@@ -1,7 +1,7 @@
 """Diffusion training loss with optional smoothness and time-annealed arbitrage penalties."""
 
 from dataclasses import dataclass, field
-from typing import Callable, Literal, cast
+from typing import Callable, Literal
 
 import torch
 import torch.nn as nn
@@ -11,7 +11,6 @@ from implied_volatility_diffusion.diffusion.model import DiffusionModel
 from implied_volatility_diffusion.diffusion.noise_scheduler import VPNoiseScheduler
 
 ArbitrageSchedule = Literal["alpha_bar", "sqrt_alpha_bar", "linear", "snr", "constant"]
-SmoothnessSpace = Literal["iv", "z"]
 
 
 def _arbitrage_weights(scheduler: VPNoiseScheduler, t: torch.Tensor, schedule: ArbitrageSchedule) -> torch.Tensor:
@@ -32,10 +31,11 @@ def _arbitrage_weights(scheduler: VPNoiseScheduler, t: torch.Tensor, schedule: A
         return torch.clamp(1.0 - t.float() / t_max, min=0.0)
     if schedule == "constant":
         return torch.ones_like(alpha_bar)
+    raise ValueError(f"unknown arbitrage schedule: {schedule}")
 
 
 def _dirichlet_energy_index_mean_per_sample(iv: torch.Tensor) -> torch.Tensor:
-    """Per batch row: mean squared forward differences along m and τ with unit spacing, summed."""
+    """Per batch row on an IV grid: mean squared index differences along m and τ, summed."""
     device, dtype = iv.device, iv.dtype
     out = torch.zeros(iv.shape[0], device=device, dtype=dtype)
     h, w = iv.shape[-2], iv.shape[-1]
@@ -48,31 +48,22 @@ def _dirichlet_energy_index_mean_per_sample(iv: torch.Tensor) -> torch.Tensor:
     return out
 
 
-def _iv_dirichlet_smoothness_per_sample(iv: torch.Tensor) -> torch.Tensor:
-    """Per-batch Dirichlet energy on the predicted surface using unit grid spacing (index mesh).
-
-    Time-annealing (e.g. SNR or linear in ``t``) is applied outside via :func:`_arbitrage_weights`.
-    """
-    return _dirichlet_energy_index_mean_per_sample(iv)
-
-
 @dataclass
 class DiffusionLossConfig:
     """Hyperparameters for :class:`DiffusionLoss`."""
 
     arbitrage_lambda: float = 0.5
-    # schedules as in Zhou et al. (arXiv:2511.07571)
-    arbitrage_schedule: ArbitrageSchedule = "snr"
+     # schedules as in Zhou et al. (arXiv:2511.07571)
+    arbitrage_schedule: ArbitrageSchedule = "alpha_bar"
     component_names: tuple[str, ...] = field(default_factory=lambda: ("calendar", "butterfly", "call"))
 
     predicted_z0_clip: tuple[float, float] | None = (-4.0, 4.0)
     # Min-SNR weighting (Hang et al., arXiv:2303.09556); γ=5 default
     min_snr_gamma: float | None = 5.0
 
-    smoothness_lambda: float = 1e-10
-    # Same schedule vocabulary as arbitrage (`snr`, `linear`, ...); uses `_arbitrage_weights`.
-    smoothness_schedule: ArbitrageSchedule = "snr"
-    smoothness_space: SmoothnessSpace = "iv"
+    smoothness_lambda: float = 1e-4
+    # Same schedule vocabulary as arbitrage; uses `_arbitrage_weights`.
+    smoothness_schedule: ArbitrageSchedule = "alpha_bar"
 
 
 class DiffusionLoss(nn.Module):
@@ -146,23 +137,18 @@ class DiffusionLoss(nn.Module):
             clip = self.config.predicted_z0_clip
             if clip is not None:
                 x0_z = torch.clamp(x0_z, clip[0], clip[1])
-            need_iv = arb_on or (smooth_on and self.config.smoothness_space == "iv")
-            if need_iv:
-                iv_pred = torch.nan_to_num(model.denormalize(x0_z), nan=0.0, posinf=0.0, neginf=0.0)
-            else:
-                iv_pred = None
+            iv_pred = torch.nan_to_num(model.denormalize(x0_z), nan=0.0, posinf=0.0, neginf=0.0)
 
             if smooth_on:
                 w_s = _arbitrage_weights(scheduler, t, self.config.smoothness_schedule)
-                surf = x0_z if self.config.smoothness_space == "z" else cast(torch.Tensor, iv_pred)
-                smooth_per = _iv_dirichlet_smoothness_per_sample(surf)
+                smooth_per = _dirichlet_energy_index_mean_per_sample(iv_pred)
                 loss_smooth = (w_s * smooth_per).mean()
                 out["loss_smooth"] = loss_smooth
                 out["smooth_weight_mean"] = w_s.mean().detach()
                 loss_total = loss_total + self.config.smoothness_lambda * loss_smooth
 
             if arb_on:
-                parts = self.arbitrage_penalty(cast(torch.Tensor, iv_pred))
+                parts = self.arbitrage_penalty(iv_pred)
                 w = _arbitrage_weights(scheduler, t, self.config.arbitrage_schedule)
                 arb_per_sample = torch.zeros(iv0.shape[0], device=device)
                 for name, value in parts.items():
@@ -193,11 +179,8 @@ class DiffusionLoss(nn.Module):
         return (z_t - sqrt_one_minus_ab * pred) / sqrt_ab
 
 
-_volgan_iv_dirichlet_smoothness_per_sample = _iv_dirichlet_smoothness_per_sample
-
 __all__ = [
     "ArbitrageSchedule",
     "DiffusionLoss",
     "DiffusionLossConfig",
-    "SmoothnessSpace",
 ]

@@ -19,7 +19,7 @@ from implied_volatility_diffusion.diffusion.kl_autoencoder import (
     KLAutoencoder,
     KLAutoencoderOutput,
 )
-from implied_volatility_diffusion.diffusion.latent_blocks import (
+from implied_volatility_diffusion.diffusion.kl_autoencoder import (
     DownBlock,
     UpBlock,
     crop_tensor,
