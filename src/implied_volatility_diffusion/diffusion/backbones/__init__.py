@@ -12,14 +12,13 @@ from implied_volatility_diffusion.diffusion.backbones.embeddings import (
     SinusoidalTimeEmbedding,
     TimeEmbeddingMLP,
 )
+from implied_volatility_diffusion.diffusion.backbones.transformer import (
+    GridTransformer,
+)
 from implied_volatility_diffusion.diffusion.backbones.unet import (
     ResnetBlock,
     SelfAttention2d,
     UNet,
-)
-
-from implied_volatility_diffusion.diffusion.backbones.transformer import (
-    GridTransformer,
 )
 
 __all__ = [

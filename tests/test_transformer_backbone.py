@@ -1,11 +1,11 @@
 import pytest
 import torch
 
-from implied_volatility_diffusion.diffusion.backbones.transformer import GridTransformer
 from implied_volatility_diffusion.diffusion.backbones import build_backbone, iter_backbone_names
+from implied_volatility_diffusion.diffusion.backbones.transformer import GridTransformer
 
-def _make_transformer(
-        *, cond_channels: int = 0) -> GridTransformer:
+
+def _make_transformer(*, cond_channels: int = 0) -> GridTransformer:
     return GridTransformer(
         grid_shape=(6, 8),
         in_channels=1,
@@ -18,6 +18,7 @@ def _make_transformer(
         dropout=0.1,
     )
 
+
 def test_grid_transformer_preserved_surface_shape() -> None:
     torch.manual_seed(0)
     model = _make_transformer().eval()
@@ -29,6 +30,7 @@ def test_grid_transformer_preserved_surface_shape() -> None:
 
     assert y.shape == x.shape, f"Expected output shape {x.shape}, got {y.shape}"
     assert torch.isfinite(y).all(), "Output contains non-finite values"
+
 
 def test_grid_transformer_registry() -> None:
     assert "transformer" in iter_backbone_names(), "Transformer backbone not registered"
@@ -43,7 +45,7 @@ def test_grid_transformer_registry() -> None:
             "layers": 2,
             "dim_feedforward": 64,
             "dropout": 0.1,
-        }
+        },
     )
 
     x = torch.randn(2, 1, 6, 8)
@@ -51,9 +53,10 @@ def test_grid_transformer_registry() -> None:
 
     assert model(x, t).shape == x.shape, "Registry-built model output shape mismatch"
 
+
 def test_conditional_grid_transformer() -> None:
     torch.manual_seed(0)
-    
+
     model = _make_transformer(cond_channels=1).eval()
     x = torch.randn(2, 1, 6, 8)
     t = torch.randint(0, 100, (2,))
@@ -67,6 +70,7 @@ def test_conditional_grid_transformer() -> None:
     assert y_a.shape == x.shape, f"Expected output shape {x.shape}, got {y_a.shape}"
     assert torch.isfinite(y_a).all(), "Output contains non-finite values"
     assert not torch.allclose(y_a, y_b), "Outputs should differ for different conditioning inputs"
+
 
 def test_conditional_grid_transformer_rejects_missing_cond() -> None:
     model = _make_transformer(cond_channels=1).eval()
@@ -82,9 +86,10 @@ def test_conditional_grid_transformer_rejects_missing_cond() -> None:
     with pytest.raises(ValueError, match="4 dimensions."):
         model(x, t, cond=torch.randn(2, 1, 6))
 
+
 def test_conditional_grid_transformer_gradients() -> None:
     torch.manual_seed(0)
-    
+
     model = _make_transformer(cond_channels=1)
     x = torch.randn(2, 1, 6, 8, requires_grad=True)
     t = torch.zeros(2, dtype=torch.long)
