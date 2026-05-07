@@ -39,9 +39,13 @@ class GridTransformer(DenoisingBackbone):
         self.prediction_type = "epsilon"
         self.num_tokens = self.grid_shape[0] * self.grid_shape[1]
 
-        self.pos_embed = nn.Parameter(torch.zeros(1, self.num_tokens, d_model))
-
-        nn.init.trunc_normal_(self.pos_embed, std=0.02)
+        # Factorized 2D positional encoding: row (moneyness) + col (tau).
+        # Token at grid position (i, j) receives row_embed[i] + col_embed[j],
+        # giving the model an explicit 2D inductive bias for IV surface structure.
+        self.row_embed = nn.Parameter(torch.zeros(self.grid_shape[0], d_model))
+        self.col_embed = nn.Parameter(torch.zeros(self.grid_shape[1], d_model))
+        nn.init.trunc_normal_(self.row_embed, std=0.02)
+        nn.init.trunc_normal_(self.col_embed, std=0.02)
 
         token_in_dim = self.in_channels + self.cond_channels
         self.input_proj = nn.Sequential(
@@ -105,7 +109,9 @@ class GridTransformer(DenoisingBackbone):
         b, _, h, w = x.shape
         values = x.flatten(2).transpose(1, 2)
         h_tokens = self.input_proj(values)
-        h_tokens = h_tokens + self.pos_embed.to(dtype=h_tokens.dtype, device=h_tokens.device)
+        # Build factorized 2D positional embedding: (H, W, d_model) → (1, H*W, d_model)
+        pos_2d = (self.row_embed[:, None, :] + self.col_embed[None, :, :]).reshape(1, self.num_tokens, -1)
+        h_tokens = h_tokens + pos_2d.to(dtype=h_tokens.dtype, device=h_tokens.device)
         h_tokens = h_tokens + self.time_proj(self.time_embedding(time).unsqueeze(1))
         out = self.out(self.encoder(h_tokens))
 
