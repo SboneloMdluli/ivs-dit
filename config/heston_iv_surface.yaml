@@ -3,11 +3,11 @@ market:
   dividend_yield: 0.0
 
 heston_ranges:
-  v0: [0.04, 0.4]
+  v0: [0.04, 0.25]
   rho: [-0.9, -0.2]
-  sigma: [0.3, 1.0]
-  theta: [0.04, 0.4]
-  kappa: [0.5, 3.0]
+  sigma: [0.3, 0.8]
+  theta: [0.04, 0.25]
+  kappa: [2.0, 5.0]
   r: [0.0, 0.05]
 
 # Latin Hypercube sampling

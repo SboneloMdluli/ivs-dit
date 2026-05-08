@@ -1,9 +1,9 @@
 # smile (rho ~ 0 -> symmetric curvature; high vol-of-vol drives curvature)
 heston_ranges:
   rho: [-0.15, 0.15]
-  sigma: [0.7, 1.2]
+  sigma: [0.6, 1.0]
   theta: [0.06, 0.20]
-  kappa: [1.5, 2.5]
+  kappa: [3.0, 6.0]
   v0: [0.06, 0.20]
 
 implied_vol:
