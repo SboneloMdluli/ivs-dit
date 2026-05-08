@@ -43,6 +43,7 @@ lightning_logs/
 
 # Local data artifacts
 *.parquet
+*.pdf
 data/**
 .data/**
 !data/.gitkeep
