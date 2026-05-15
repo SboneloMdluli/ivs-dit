@@ -1,6 +1,6 @@
 """Diffusion training loss with optional smoothness and time-annealed arbitrage penalties."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Callable, Literal
 
 import torch
@@ -55,11 +55,10 @@ class DiffusionLossConfig:
     arbitrage_lambda: float = 0.5
     # schedules as in Zhou et al. (arXiv:2511.07571)
     arbitrage_schedule: ArbitrageSchedule = "alpha_bar"
-    component_names: tuple[str, ...] = field(default_factory=lambda: ("calendar", "butterfly", "call"))
 
     predicted_z0_clip: tuple[float, float] | None = (-4.0, 4.0)
-    # Min-SNR weighting (Hang et al., arXiv:2303.09556); γ=5 default
-    min_snr_gamma: float | None = 5.0
+    # SNR loss weighting (Hang et al., arXiv:2303.09556): w = SNR for x0, uniform for epsilon
+    snr_weighting: bool = True
 
     smoothness_lambda: float = 1e-4
     # Same schedule vocabulary as arbitrage; uses `_arbitrage_weights`.
@@ -83,7 +82,9 @@ class DiffusionLoss(nn.Module):
     def sample_timesteps(
         self, batch_size: int, scheduler: VPNoiseScheduler, *, device: torch.device | None = None
     ) -> torch.Tensor:
-        """Uniform integer t in ``[0, timesteps)``."""
+        """Sample integer ``t ~ U{0, …, timesteps-1}`` per batch row."""
+        if device is None:
+            device = scheduler.alpha_bar.device
         return torch.randint(0, scheduler.timesteps, (batch_size,), device=device, dtype=torch.long)
 
     def forward(
@@ -112,14 +113,13 @@ class DiffusionLoss(nn.Module):
         pred = model.predict_noise(z_t, t, cond)
         target = eps if model.prediction_type == "epsilon" else z0
         per_sample_mse = ((pred - target) ** 2).flatten(1).mean(dim=1)
-        if self.config.min_snr_gamma is not None and self.config.min_snr_gamma > 0:
+        if self.config.snr_weighting:
             alpha_bar = scheduler.alpha_bar_at(t)
             snr = alpha_bar / torch.clamp(1.0 - alpha_bar, min=1e-8)
-            min_snr = torch.clamp(snr, max=float(self.config.min_snr_gamma))
             if model.prediction_type == "epsilon":
-                w_loss = min_snr / torch.clamp(snr, min=1e-8)
+                w_loss = torch.ones_like(snr)
             else:
-                w_loss = min_snr
+                w_loss = snr
             loss_eps = (w_loss * per_sample_mse).mean()
         else:
             loss_eps = per_sample_mse.mean()
