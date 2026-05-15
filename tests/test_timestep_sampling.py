@@ -87,3 +87,20 @@ def test_eps_loss_alpha_bar_upweights_near_x0() -> None:
     w_low = loss._eps_loss_weights(sched, t_low, "epsilon")
     w_high = loss._eps_loss_weights(sched, t_high, "epsilon")
     assert (w_low > w_high).all()
+
+
+def test_alpha_bar_sq_emphasizes_low_noise_more_than_alpha_bar() -> None:
+    sched = VPNoiseScheduler(timesteps=400, beta_schedule="cosine")
+    t_low = torch.tensor([5], dtype=torch.long)
+    t_high = torch.tensor([350], dtype=torch.long)
+    loss_ab = DiffusionLoss(config=DiffusionLossConfig(eps_loss_schedule="alpha_bar"))
+    loss_sq = DiffusionLoss(config=DiffusionLossConfig(eps_loss_schedule="alpha_bar_sq"))
+    ratio_ab = (
+        loss_ab._eps_loss_weights(sched, t_low, "epsilon")[0]
+        / loss_ab._eps_loss_weights(sched, t_high, "epsilon")[0]
+    )
+    ratio_sq = (
+        loss_sq._eps_loss_weights(sched, t_low, "epsilon")[0]
+        / loss_sq._eps_loss_weights(sched, t_high, "epsilon")[0]
+    )
+    assert ratio_sq > ratio_ab

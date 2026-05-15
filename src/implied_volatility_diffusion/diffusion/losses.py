@@ -10,18 +10,20 @@ from implied_volatility_diffusion.diffusion.arbitrage_torch import ArbitragePena
 from implied_volatility_diffusion.diffusion.model import DiffusionModel
 from implied_volatility_diffusion.diffusion.noise_scheduler import VPNoiseScheduler
 
-ArbitrageSchedule = Literal["alpha_bar", "sqrt_alpha_bar", "linear", "snr", "constant"]
+ArbitrageSchedule = Literal["alpha_bar", "alpha_bar_sq", "sqrt_alpha_bar", "linear", "snr", "constant"]
 TimestepSampling = Literal["uniform", "lognormal"]
 
 
 def _arbitrage_weights(scheduler: VPNoiseScheduler, t: torch.Tensor, schedule: ArbitrageSchedule) -> torch.Tensor:
     """Per-sample weights ~1 near t≈0, ~0 near T (monotone in t).
 
-    Methods: alpha_bar; sqrt(alpha_bar); SNR clipped to [0,1]; linear 1−t/(T−1); constant 1.
+    Methods: alpha_bar; alpha_bar_sq; sqrt(alpha_bar); SNR clipped to [0,1]; linear 1−t/(T−1); constant 1.
     """
     alpha_bar = scheduler.alpha_bar_at(t)
     if schedule == "alpha_bar":
         return alpha_bar
+    if schedule == "alpha_bar_sq":
+        return alpha_bar * alpha_bar
     if schedule == "sqrt_alpha_bar":
         return torch.sqrt(alpha_bar)
     if schedule == "snr":
