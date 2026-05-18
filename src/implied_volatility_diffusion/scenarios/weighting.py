@@ -1,25 +1,11 @@
-"""VolGAN-style exponential scenario weights from arbitrage penalties."""
-
-from __future__ import annotations
+"""VolGAN exponential scenario weights from arbitrage penalties."""
 
 import numpy as np
-
-try:
-    import torch
-except ImportError:  # pragma: no cover
-    torch = None  # type: ignore[assignment]
+import torch
 
 
 def volgan_exponential_weights(penalties: np.ndarray, beta: float) -> np.ndarray:
-    """Return w_i = exp(-β Φ_i) / Σ_j exp(-β Φ_j) (VolGAN reweighting).
-
-    Args:
-        penalties: Per-scenario arbitrage penalties Φ(σ^i), shape ``(N,)`` or broadcastable.
-        beta: Sensitivity; larger β concentrates mass on low-penalty scenarios.
-
-    Returns:
-        Normalized weights summing to 1.
-    """
+    """Normalized weights ``w_i ∝ exp(-β Φ_i)``."""
     if beta < 0.0:
         raise ValueError("beta must be non-negative")
     phi = np.asarray(penalties, dtype=float).reshape(-1)
@@ -33,10 +19,45 @@ def volgan_exponential_weights(penalties: np.ndarray, beta: float) -> np.ndarray
     return w / w.sum()
 
 
-def volgan_exponential_weights_torch(penalties: "torch.Tensor", beta: float) -> "torch.Tensor":
-    """Torch variant of :func:`volgan_exponential_weights` using ``softmax(-β Φ)``."""
-    if torch is None:
-        raise ImportError("torch is required for volgan_exponential_weights_torch")
+def adaptive_beta(weights: np.ndarray, scale: float = 500.0) -> float:
+    """VolGAN adaptive β = scale / max(w)."""
+    w = np.asarray(weights, dtype=float).reshape(-1)
+    w_max = float(np.max(w))
+    if w_max <= 0.0:
+        return 0.0
+    return scale / w_max
+
+
+def relative_entropy(weights: np.ndarray) -> float:
+    """KL divergence of weights from the uniform distribution."""
+    w = np.asarray(weights, dtype=float).reshape(-1)
+    n = w.size
+    if n <= 1:
+        return 0.0
+    safe_w = np.where(w > 0.0, w, 1.0)
+    log_w = np.where(w > 0.0, np.log(safe_w), 0.0)
+    return float(np.log(n) + np.sum(w * log_w))
+
+
+def effective_sample_size(weights: np.ndarray) -> float:
+    """ESS = 1 / Σ w_i²."""
+    w = np.asarray(weights, dtype=float).reshape(-1)
+    w2_sum = float(np.sum(w**2))
+    if w2_sum <= 0.0:
+        return 0.0
+    return 1.0 / w2_sum
+
+
+def fraction_arbitrage_free(penalties: np.ndarray, tol: float = 0.0) -> float:
+    """Fraction of scenarios with penalty ≤ ``tol``."""
+    phi = np.asarray(penalties, dtype=float).reshape(-1)
+    if phi.size == 0:
+        return 0.0
+    return float(np.mean(phi <= tol))
+
+
+def volgan_exponential_weights_torch(penalties: torch.Tensor, beta: float) -> torch.Tensor:
+    """Torch ``softmax(-β Φ)`` variant of :func:`volgan_exponential_weights`."""
     if beta < 0.0:
         raise ValueError("beta must be non-negative")
     phi = penalties.reshape(-1)

@@ -1,20 +1,16 @@
 """End-to-end scenario generation with penalty evaluation and VolGAN weighting."""
 
-from __future__ import annotations
-
 import numpy as np
+import torch
 
+from implied_volatility_diffusion.diffusion.arbitrage_torch import ArbitragePenalty
 from implied_volatility_diffusion.scenarios.generators import JointScenarioGenerator
 from implied_volatility_diffusion.scenarios.penalty import SurfaceArbitragePenalty
 from implied_volatility_diffusion.scenarios.types import JointScenarioBatch, PenaltyWeightingResult
-from implied_volatility_diffusion.scenarios.weighting import volgan_exponential_weights
-
-try:
-    import torch
-    from implied_volatility_diffusion.diffusion.arbitrage_torch import ArbitragePenalty
-except ImportError:  # pragma: no cover
-    torch = None  # type: ignore[assignment]
-    ArbitragePenalty = None  # type: ignore[misc, assignment]
+from implied_volatility_diffusion.scenarios.weighting import (
+    volgan_exponential_weights,
+    volgan_exponential_weights_torch,
+)
 
 
 def penalize_iv_surfaces(
@@ -65,15 +61,11 @@ def generate_weighted_joint_scenarios(
 
 
 def penalize_and_weight_iv_surfaces_torch(
-    iv: "torch.Tensor",
-    penalty: "ArbitragePenalty",
+    iv: torch.Tensor,
+    penalty: ArbitragePenalty,
     beta: float,
 ) -> PenaltyWeightingResult:
     """Torch path for generative models: Φ from :class:`ArbitragePenalty`, same weights."""
-    if torch is None or ArbitragePenalty is None:
-        raise ImportError("torch and ArbitragePenalty are required")
-    from implied_volatility_diffusion.scenarios.weighting import volgan_exponential_weights_torch
-
     phi_t = penalty.total(iv)
     phi = phi_t.detach().cpu().numpy().reshape(-1)
     w = volgan_exponential_weights_torch(phi_t, beta).detach().cpu().numpy().reshape(-1)

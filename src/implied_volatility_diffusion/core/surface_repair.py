@@ -10,6 +10,13 @@ from scipy.ndimage import gaussian_filter
 from implied_volatility_diffusion.arbitrage import check_iv_surface_arbitrage
 from implied_volatility_diffusion.arbitrage_checks.checks import _bs_call_grid
 from implied_volatility_diffusion.pricing.implied_vol import implied_volatility
+from implied_volatility_diffusion.scenarios.penalty import SurfaceArbitragePenalty
+from implied_volatility_diffusion.scenarios.weighting import (
+    adaptive_beta,
+    fraction_arbitrage_free,
+    relative_entropy,
+    volgan_exponential_weights,
+)
 
 
 def repair_calendar_monotone(iv: np.ndarray, tau: np.ndarray) -> np.ndarray:
@@ -176,6 +183,39 @@ def _repair_convex_calls(
     return np.clip(rebuilt, lower, upper)
 
 
+def _preserve_iv_at_bound(
+    call_price: float,
+    moneyness: float,
+    tau: float,
+    *,
+    spot: float,
+    rate: float,
+    dividend_yield: float,
+    bound_tol: float,
+    reference_iv: float | None = None,
+    iv_floor: float = 1e-4,
+) -> bool:
+    """Keep reference IV when call price sits on a no-arbitrage bound."""
+    lower, upper = _call_bounds(
+        np.array([moneyness], dtype=float),
+        tau,
+        spot=spot,
+        rate=rate,
+        dividend_yield=dividend_yield,
+    )
+    lo = float(lower[0])
+    up = float(upper[0])
+    cp = float(call_price)
+    if cp >= up - bound_tol:
+        return True
+    if cp <= lo + bound_tol:
+        if lo > bound_tol:
+            return True
+        if reference_iv is not None and np.isfinite(reference_iv) and float(reference_iv) > iv_floor:
+            return True
+    return False
+
+
 def _iv_from_calls(
     calls: np.ndarray,
     moneyness: np.ndarray,
@@ -186,17 +226,41 @@ def _iv_from_calls(
     dividend_yield: float,
     iv_floor: float,
     sigma_hi: float,
+    iv_reference: np.ndarray | None = None,
+    bound_tol: float | None = None,
 ) -> np.ndarray:
-    """Invert clipped call prices back to implied vol on one maturity column."""
+    """Invert clipped call prices to IV on one maturity column."""
     m = np.asarray(moneyness, dtype=float).reshape(-1)
     c = np.asarray(calls, dtype=float).reshape(-1)
+    ref = None if iv_reference is None else np.asarray(iv_reference, dtype=float).reshape(-1)
+    if ref is not None and ref.size != m.size:
+        raise ValueError(f"iv_reference length {ref.size} must match moneyness {m.size}")
     out = np.full(m.size, np.nan, dtype=float)
     t = float(tau)
     if t <= 0.0:
         return out
 
+    price_tol = float(bound_tol) if bound_tol is not None else max(1e-10 * float(spot), 1e-8)
+
     for i, mi in enumerate(m):
         if not np.isfinite(c[i]):
+            continue
+        if (
+            ref is not None
+            and np.isfinite(ref[i])
+            and _preserve_iv_at_bound(
+                float(c[i]),
+                float(mi),
+                t,
+                spot=spot,
+                rate=rate,
+                dividend_yield=dividend_yield,
+                bound_tol=price_tol,
+                reference_iv=float(ref[i]),
+                iv_floor=iv_floor,
+            )
+        ):
+            out[i] = float(ref[i])
             continue
         strike = float(mi * spot)
         try:
@@ -211,7 +275,10 @@ def _iv_from_calls(
                 sigma_hi=sigma_hi,
             )
         except (ValueError, ArithmeticError):
-            out[i] = np.nan
+            if ref is not None and np.isfinite(ref[i]):
+                out[i] = float(ref[i])
+            else:
+                out[i] = np.nan
     return out
 
 
@@ -250,7 +317,8 @@ def repair_butterfly_convex(
     strength: float = 1.0,
 ) -> np.ndarray:
     """Repair butterfly violations via convex call-price projection per maturity."""
-    iv_arr = np.asarray(iv, dtype=float).copy()
+    iv_orig = np.asarray(iv, dtype=float)
+    iv_arr = iv_orig.copy()
     m = np.asarray(moneyness, dtype=float).reshape(-1)
     t = np.asarray(tau, dtype=float).reshape(-1)
 
@@ -279,6 +347,7 @@ def repair_butterfly_convex(
             dividend_yield=dividend_yield,
             iv_floor=iv_floor,
             sigma_hi=sigma_hi,
+            iv_reference=iv_orig[:, j],
         )
     return iv_arr
 
@@ -294,11 +363,7 @@ def volgan_generative_repair_settings(
     blend: float = 1.0,
     butterfly_strength: float = 1.0,
 ) -> "SurfaceRepairSettings":
-    """Repair settings for generative IV surfaces (VolGAN-style).
-
-    Runs smooth / calendar / butterfly projection only when arbitrage checks fail,
-    leaving clean diffusion samples unchanged.
-    """
+    """VolGAN-style settings: repair only when arbitrage checks fail."""
     return SurfaceRepairSettings(
         iv_floor=iv_floor,
         sigma_hi=sigma_hi,
@@ -343,15 +408,7 @@ def repair_iv_surface(
     dividend_yield: float = 0.0,
     settings: SurfaceRepairSettings | None = None,
 ) -> np.ndarray:
-    """Smooth and project an IV surface toward no-arbitrage.
-
-    Pipeline (iterated until checks pass or ``max_iterations``):
-
-    1. Clip IV to ``iv_floor``.
-    2. Optional Gaussian smooth on ``log(iv)``.
-    3. Calendar repair via monotone total variance.
-    4. Butterfly repair via convex call-price projection per maturity.
-    """
+    """Iteratively smooth, calendar-repair, and butterfly-project toward no-arbitrage."""
     cfg = settings or SurfaceRepairSettings()
     original = np.asarray(iv, dtype=float).copy()
     out = original.copy()
@@ -464,11 +521,242 @@ def repair_iv_surfaces(
     return repaired.reshape(leading + repaired.shape[-2:])
 
 
+def _penalty_targeted_smooth(
+    iv: np.ndarray,
+    penalty_mask: np.ndarray,
+    *,
+    sigma_log_moneyness: float,
+    sigma_tau: float,
+    iv_floor: float,
+    strength: float = 1.0,
+) -> np.ndarray:
+    """Gaussian-smooth only at cells flagged by penalty matrices P1–P3."""
+    arr = np.asarray(iv, dtype=float)
+    mask = np.asarray(penalty_mask, dtype=float) > 0.0
+    if not np.any(mask):
+        return arr.copy()
+
+    smoothed = _smooth_log_iv(
+        arr,
+        sigma_log_moneyness=sigma_log_moneyness,
+        sigma_tau=sigma_tau,
+        iv_floor=iv_floor,
+    )
+    out = arr.copy()
+    w = float(np.clip(strength, 0.0, 1.0))
+    blend_mask = mask & np.isfinite(arr) & np.isfinite(smoothed)
+    out[blend_mask] = (1.0 - w) * arr[blend_mask] + w * smoothed[blend_mask]
+    return out
+
+
+@dataclass(frozen=True)
+class TargetedRepairSettings:
+    """Repair settings that localize corrections via penalty matrices P1–P3."""
+
+    iv_floor: float = 1e-4
+    sigma_hi: float = 10.0
+    tol: float = 1e-8
+    max_iterations: int = 8
+    smooth_sigma_log_moneyness: float = 0.6
+    smooth_sigma_tau: float = 0.4
+    repair_calendar: bool = True
+    repair_butterfly: bool = True
+    repair_wings: bool = True
+    blend: float = 1.0
+    butterfly_strength: float = 1.0
+    smooth_violation_only: bool = True
+
+
+def repair_iv_surface_targeted(
+    iv: np.ndarray,
+    moneyness: np.ndarray,
+    tau: np.ndarray,
+    *,
+    spot: float,
+    rate: float,
+    dividend_yield: float = 0.0,
+    settings: TargetedRepairSettings | None = None,
+) -> np.ndarray:
+    """Like :func:`repair_iv_surface`, but smooth and correct only at violation sites."""
+    cfg = settings or TargetedRepairSettings()
+    out = np.asarray(iv, dtype=float).copy()
+    m = np.asarray(moneyness, dtype=float).reshape(-1)
+    t = np.asarray(tau, dtype=float).reshape(-1)
+
+    penalty_eval = SurfaceArbitragePenalty(
+        moneyness=m,
+        tau=t,
+        spot=spot,
+        rate=rate,
+        dividend_yield=dividend_yield,
+    )
+
+    for _ in range(max(1, int(cfg.max_iterations))):
+        finite = np.isfinite(out) & (out > 0.0)
+        out = np.where(finite, np.maximum(out, cfg.iv_floor), out)
+
+        pm = penalty_eval.penalty_matrices(out)
+        if pm.arbitrage_free:
+            break
+
+        if cfg.smooth_violation_only and (cfg.smooth_sigma_log_moneyness > 0.0 or cfg.smooth_sigma_tau > 0.0):
+            violation_mask = pm.total > 0.0
+            out = _penalty_targeted_smooth(
+                out,
+                violation_mask,
+                sigma_log_moneyness=cfg.smooth_sigma_log_moneyness,
+                sigma_tau=cfg.smooth_sigma_tau,
+                iv_floor=cfg.iv_floor,
+                strength=cfg.blend,
+            )
+        elif cfg.smooth_sigma_log_moneyness > 0.0 or cfg.smooth_sigma_tau > 0.0:
+            smoothed = _smooth_log_iv(
+                out,
+                sigma_log_moneyness=cfg.smooth_sigma_log_moneyness,
+                sigma_tau=cfg.smooth_sigma_tau,
+                iv_floor=cfg.iv_floor,
+            )
+            out = _blend_arrays(out, smoothed, cfg.blend, mask=finite)
+
+        if cfg.repair_calendar and pm.phi_calendar > 0.0:
+            cal = repair_calendar_monotone(out, t)
+            out = _blend_arrays(out, cal, cfg.blend, mask=finite)
+
+        report = check_iv_surface_arbitrage(
+            out,
+            m,
+            t,
+            spot=float(spot),
+            rate=float(rate),
+            dividend_yield=float(dividend_yield),
+            tol=float(cfg.tol),
+        )
+
+        if cfg.repair_butterfly and not report.butterfly_ok:
+            bfly = repair_butterfly_convex(
+                out,
+                m,
+                t,
+                spot=spot,
+                rate=rate,
+                dividend_yield=dividend_yield,
+                iv_floor=cfg.iv_floor,
+                sigma_hi=cfg.sigma_hi,
+                repair_wings=cfg.repair_wings,
+                strength=cfg.butterfly_strength,
+            )
+            out = _blend_arrays(out, bfly, cfg.blend, mask=finite)
+
+        report = check_iv_surface_arbitrage(
+            out,
+            m,
+            t,
+            spot=float(spot),
+            rate=float(rate),
+            dividend_yield=float(dividend_yield),
+            tol=float(cfg.tol),
+        )
+        if report.arbitrage_free:
+            break
+
+    if cfg.repair_calendar:
+        cal = repair_calendar_monotone(out, t)
+        out = _blend_arrays(out, cal, cfg.blend, mask=np.isfinite(out))
+
+    if cfg.blend >= 1.0:
+        return out
+    original = np.asarray(iv, dtype=float)
+    return _blend_arrays(original, out, cfg.blend, mask=np.isfinite(original) & np.isfinite(out))
+
+
+@dataclass(frozen=True)
+class ScenarioRepairResult:
+    """Repaired scenario batch with penalties, VolGAN weights, and diagnostics."""
+
+    iv_surfaces: np.ndarray
+    penalties_before: np.ndarray
+    penalties_after: np.ndarray
+    weights: np.ndarray
+    fraction_clean_before: float
+    fraction_clean_after: float
+    relative_entropy: float
+
+    @property
+    def n_scenarios(self) -> int:
+        return int(self.iv_surfaces.shape[0])
+
+
+def repair_and_reweight_scenarios(
+    iv_surfaces: np.ndarray,
+    moneyness: np.ndarray,
+    tau: np.ndarray,
+    *,
+    spot: float,
+    rate: float,
+    dividend_yield: float = 0.0,
+    repair_settings: SurfaceRepairSettings | None = None,
+    beta: float = 100.0,
+    adaptive: bool = True,
+) -> ScenarioRepairResult:
+    """Repair ``(N, M, T)`` surfaces, then re-weight scenarios with ``exp(-β Φ)``."""
+    iv_arr = np.asarray(iv_surfaces, dtype=float)
+    if iv_arr.ndim != 3:
+        raise ValueError(f"iv_surfaces must be (N, M, T); got shape {iv_arr.shape}")
+
+    m = np.asarray(moneyness, dtype=float).reshape(-1)
+    t = np.asarray(tau, dtype=float).reshape(-1)
+
+    penalty_eval = SurfaceArbitragePenalty(
+        moneyness=m,
+        tau=t,
+        spot=spot,
+        rate=rate,
+        dividend_yield=dividend_yield,
+    )
+
+    penalties_before = penalty_eval.batch(iv_arr)
+    frac_before = fraction_arbitrage_free(penalties_before)
+
+    repaired = repair_iv_surfaces(
+        iv_arr,
+        m,
+        t,
+        spot=spot,
+        rate=rate,
+        dividend_yield=dividend_yield,
+        settings=repair_settings,
+    )
+
+    penalties_after = penalty_eval.batch(repaired)
+    frac_after = fraction_arbitrage_free(penalties_after)
+
+    if adaptive:
+        initial_weights = volgan_exponential_weights(penalties_after, beta)
+        beta = adaptive_beta(initial_weights)
+
+    weights = volgan_exponential_weights(penalties_after, beta)
+    re = relative_entropy(weights)
+
+    return ScenarioRepairResult(
+        iv_surfaces=repaired,
+        penalties_before=penalties_before,
+        penalties_after=penalties_after,
+        weights=weights,
+        fraction_clean_before=frac_before,
+        fraction_clean_after=frac_after,
+        relative_entropy=re,
+    )
+
+
 __all__ = [
+    "ScenarioRepairResult",
     "SurfaceRepairSettings",
+    "TargetedRepairSettings",
+    "repair_and_reweight_scenarios",
     "repair_butterfly_convex",
     "repair_calendar_monotone",
     "repair_iv_surface",
+    "repair_iv_surface_targeted",
     "repair_iv_surfaces",
     "repair_wing_monotonicity",
     "volgan_generative_repair_settings",

@@ -4,15 +4,6 @@ from implied_volatility_diffusion.core.atm_geometry import (
     atm_skew_and_curvature,
     atm_skew_and_curvature_batch,
 )
-from implied_volatility_diffusion.core.surface_repair import (
-    SurfaceRepairSettings,
-    repair_butterfly_convex,
-    repair_calendar_monotone,
-    repair_iv_surface,
-    repair_iv_surfaces,
-    repair_wing_monotonicity,
-    volgan_generative_repair_settings,
-)
 from implied_volatility_diffusion.core.grid import build_grid_axis, grid_axes
 from implied_volatility_diffusion.core.lhs import (
     lhs_params_from_config,
@@ -32,6 +23,19 @@ from implied_volatility_diffusion.core.protocols import (
     ModelCallPricer,
     VolModel,
 )
+from implied_volatility_diffusion.core.surface_repair import (
+    ScenarioRepairResult,
+    SurfaceRepairSettings,
+    TargetedRepairSettings,
+    repair_and_reweight_scenarios,
+    repair_butterfly_convex,
+    repair_calendar_monotone,
+    repair_iv_surface,
+    repair_iv_surface_targeted,
+    repair_iv_surfaces,
+    repair_wing_monotonicity,
+    volgan_generative_repair_settings,
+)
 from implied_volatility_diffusion.core.types import MarketState, SurfaceBatch
 from implied_volatility_diffusion.core.unified_grid import (
     UNIFIED_IV_GRID_YAML,
@@ -41,12 +45,16 @@ from implied_volatility_diffusion.core.unified_grid import (
 )
 
 __all__ = [
+    "ScenarioRepairResult",
     "SurfaceRepairSettings",
+    "TargetedRepairSettings",
     "atm_skew_and_curvature",
     "atm_skew_and_curvature_batch",
+    "repair_and_reweight_scenarios",
     "repair_butterfly_convex",
     "repair_calendar_monotone",
     "repair_iv_surface",
+    "repair_iv_surface_targeted",
     "repair_iv_surfaces",
     "repair_wing_monotonicity",
     "volgan_generative_repair_settings",

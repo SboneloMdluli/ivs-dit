@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 import torch
 
+from implied_volatility_diffusion.diffusion.arbitrage_torch import ArbitragePenalty
 from implied_volatility_diffusion.scenarios import (
     CallableJointScenarioGenerator,
     FilteredHistoricalSimulation,
@@ -13,7 +14,6 @@ from implied_volatility_diffusion.scenarios import (
     penalize_and_weight_iv_surfaces_torch,
     volgan_exponential_weights,
 )
-from implied_volatility_diffusion.diffusion.arbitrage_torch import ArbitragePenalty
 
 
 def _flat_iv(m: np.ndarray, tau: np.ndarray, sigma: float = 0.25) -> np.ndarray:

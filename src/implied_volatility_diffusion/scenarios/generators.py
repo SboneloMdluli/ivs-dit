@@ -1,7 +1,5 @@
 """Scenario generators for joint asset return and IV-surface dynamics."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import Callable, Protocol, runtime_checkable
 

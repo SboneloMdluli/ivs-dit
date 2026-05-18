@@ -24,34 +24,7 @@ def atm_skew_and_curvature(
     *,
     atm_log_moneyness: float = 0.0,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Finite-difference ATM skew and curvature vs tenor.
-
-    For each maturity column ``tau[j]``, let ``σ(k, τ_j)`` be the IV slice on
-    ``grid.log_moneyness``. With ``k_*`` the grid point closest to
-    ``atm_log_moneyness`` and ``k_±`` its neighbors along ``k``,
-
-    - **skew** ≈ ``∂σ/∂k`` at ATM via central differences in ``k``;
-    - **curvature** ≈ ``∂²σ/∂k²`` at ATM via the standard second central stencil.
-
-    Parameters
-    ----------
-    iv
-        Implied-vol grid ``(n_k, n_tau)``, aligned with ``grid.shape``.
-    grid
-        Canonical unified grid (log-moneyness × tau).
-    atm_log_moneyness
-        Forward log-moneyness ``log(K/F)`` where skew/curvature are evaluated
-        (default ``0`` for ATM).
-
-    Returns
-    -------
-    tau
-        Shape ``(n_tau,)`` — copied from ``grid.tau``.
-    skew
-        Shape ``(n_tau,)`` — ``∂σ/∂k`` at ATM for each tenor.
-    curvature
-        Shape ``(n_tau,)`` — ``∂²σ/∂k²`` at ATM for each tenor.
-    """
+    """Central-difference ATM skew and curvature along log-moneyness, per tenor."""
     arr = np.asarray(iv, dtype=float)
     if arr.shape != grid.shape:
         raise ValueError(f"iv shape {arr.shape} must match grid.shape {grid.shape}")
@@ -83,18 +56,10 @@ def atm_skew_and_curvature_batch(
     *,
     atm_log_moneyness: float = 0.0,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Batch version: mean and sample std of skew/curvature across surfaces.
-
-    Parameters
-    ----------
-    iv_batch
-        ``(..., n_k, n_tau)`` where the last two axes match ``grid.shape``.
-    """
+    """Mean and std of ATM skew/curvature over a batch of surfaces."""
     batch = np.asarray(iv_batch, dtype=float)
     if batch.shape[-2:] != grid.shape:
-        raise ValueError(
-            f"trailing iv_batch axes {batch.shape[-2:]} must match grid.shape {grid.shape}"
-        )
+        raise ValueError(f"trailing iv_batch axes {batch.shape[-2:]} must match grid.shape {grid.shape}")
     flat = batch.reshape(-1, *grid.shape)
     skew_stack = np.empty((flat.shape[0], grid.tau.size), dtype=float)
     curv_stack = np.empty_like(skew_stack)

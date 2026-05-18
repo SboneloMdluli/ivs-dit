@@ -308,11 +308,6 @@ def plot_surface_3d(
     plt.show()
 
 
-# ---------------------------------------------------------------------------
-# Full pipeline: smoothing -> interp/extrap NaN-fill -> unified grid -> normalize
-# ---------------------------------------------------------------------------
-
-
 def fill_surface_interp_extrap(
     Z: np.ndarray,
     x_grid: np.ndarray,
@@ -484,11 +479,6 @@ def build_historical_surface_pipeline(
         iv_unified=iv_unified,
         iv_normalized=iv_normalized,
     )
-
-
-# ---------------------------------------------------------------------------
-# PDF report helpers
-# ---------------------------------------------------------------------------
 
 
 def _add_surface_subplot(

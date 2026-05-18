@@ -10,7 +10,6 @@ class ModelCallPricer(Protocol):
     """Scalar (strike, tau) -> discounted call price. Kept for legacy hooks."""
 
     def __call__(self, strike: float, tau: float) -> float:
-        """Return discounted call price for a scalar strike and maturity."""
         ...
 
 
@@ -29,7 +28,6 @@ class ImpliedVolInverter(Protocol):
         dividend_yield: float = 0.0,
         **kwargs: Any,
     ) -> float:
-        """Invert a model price to Black-Scholes implied volatility."""
         ...
 
 
@@ -65,5 +63,3 @@ class VolModel(Protocol):
     ) -> np.ndarray:
         """Black-Scholes implied volatility with the same ``(B, M, T)`` shape."""
         ...
-
-

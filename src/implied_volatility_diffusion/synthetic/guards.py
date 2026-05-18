@@ -69,7 +69,7 @@ def _repair_settings(settings: GuardSettings) -> SurfaceRepairSettings:
         blend=float(settings.repair_blend),
         butterfly_strength=float(settings.butterfly_strength),
         repair_wings=True,
-        only_if_violated=False,
+        only_if_violated=True,
     )
 
 

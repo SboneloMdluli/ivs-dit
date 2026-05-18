@@ -6,12 +6,27 @@ from implied_volatility_diffusion.arbitrage import (
     check_iv_surfaces_arbitrage,
 )
 from implied_volatility_diffusion.config import load_config, merge_config, merge_config_files
+from implied_volatility_diffusion.core.grid import grid_axes
+from implied_volatility_diffusion.core.lhs import (
+    lhs_params_from_config,
+    lhs_params_multi_batch_from_config,
+)
 from implied_volatility_diffusion.core.normalization import (
     SurfaceNormalizer,
     denormalize_surface,
     iv_to_log_iv,
     log_iv_to_iv,
     normalize_surface,
+)
+from implied_volatility_diffusion.core.surface_repair import (
+    ScenarioRepairResult,
+    SurfaceRepairSettings,
+    TargetedRepairSettings,
+    repair_and_reweight_scenarios,
+    repair_iv_surface,
+    repair_iv_surface_targeted,
+    repair_iv_surfaces,
+    volgan_generative_repair_settings,
 )
 from implied_volatility_diffusion.core.unified_grid import (
     UNIFIED_IV_GRID_YAML,
@@ -39,27 +54,42 @@ from implied_volatility_diffusion.diffusion import (
     register_backbone,
 )
 from implied_volatility_diffusion.diffusion.noise_scheduler import VPNoiseScheduler
-from implied_volatility_diffusion.core.grid import grid_axes
-from implied_volatility_diffusion.core.lhs import (
-    lhs_params_from_config,
-    lhs_params_multi_batch_from_config,
-)
 from implied_volatility_diffusion.models.heston.model import HESTON_PARAM_ORDER
 from implied_volatility_diffusion.models.heston.simulation import (
     feller_index,
     is_feller_satisfied,
     milstein_step,
 )
+from implied_volatility_diffusion.scenarios import (
+    CallableJointScenarioGenerator,
+    FilteredHistoricalSettings,
+    FilteredHistoricalSimulation,
+    JointHistoricalState,
+    JointScenarioBatch,
+    JointScenarioGenerator,
+    PenaltyMatrices,
+    PenaltyWeightingResult,
+    SurfaceArbitragePenalty,
+    SurfaceArbitrageWeights,
+    adaptive_beta,
+    effective_sample_size,
+    fraction_arbitrage_free,
+    generate_weighted_joint_scenarios,
+    penalize_and_weight_iv_surfaces,
+    penalize_and_weight_iv_surfaces_torch,
+    penalize_iv_surfaces,
+    relative_entropy,
+    smoothness_penalty,
+    smoothness_penalty_moneyness,
+    smoothness_penalty_tau,
+    volgan_exponential_weights,
+    volgan_exponential_weights_torch,
+    weight_scenarios_from_penalties,
+)
 from implied_volatility_diffusion.synthetic.goals import (
     HESTON_GOAL_YAML,
     HestonIvGoal,
     coerce_heston_iv_goal,
-)
-from implied_volatility_diffusion.core.surface_repair import (
-    SurfaceRepairSettings,
-    repair_iv_surface,
-    repair_iv_surfaces,
-    volgan_generative_repair_settings,
 )
 from implied_volatility_diffusion.synthetic.guards import (
     ArbitrageError,
@@ -85,24 +115,6 @@ from implied_volatility_diffusion.synthetic.heston import (
     lhs_heston_params_multi_batch,
     load_heston_iv_surface_config,
     load_heston_iv_surface_goal_config,
-)
-from implied_volatility_diffusion.scenarios import (
-    CallableJointScenarioGenerator,
-    FilteredHistoricalSettings,
-    FilteredHistoricalSimulation,
-    JointHistoricalState,
-    JointScenarioBatch,
-    JointScenarioGenerator,
-    PenaltyWeightingResult,
-    SurfaceArbitragePenalty,
-    SurfaceArbitrageWeights,
-    generate_weighted_joint_scenarios,
-    penalize_and_weight_iv_surfaces,
-    penalize_and_weight_iv_surfaces_torch,
-    penalize_iv_surfaces,
-    volgan_exponential_weights,
-    volgan_exponential_weights_torch,
-    weight_scenarios_from_penalties,
 )
 from implied_volatility_diffusion.synthetic.sabr import (
     implied_vol_surface_for_sabr_params,
@@ -176,10 +188,14 @@ __all__ = [
     "merge_config",
     "merge_config_files",
     "milstein_step",
+    "repair_and_reweight_scenarios",
     "repair_calendar_monotone",
     "repair_iv_surface",
+    "repair_iv_surface_targeted",
     "repair_iv_surfaces",
+    "ScenarioRepairResult",
     "SurfaceRepairSettings",
+    "TargetedRepairSettings",
     "volgan_generative_repair_settings",
     "CallableJointScenarioGenerator",
     "FilteredHistoricalSettings",
@@ -187,13 +203,21 @@ __all__ = [
     "JointHistoricalState",
     "JointScenarioBatch",
     "JointScenarioGenerator",
+    "PenaltyMatrices",
     "PenaltyWeightingResult",
     "SurfaceArbitragePenalty",
     "SurfaceArbitrageWeights",
+    "adaptive_beta",
+    "effective_sample_size",
+    "fraction_arbitrage_free",
     "generate_weighted_joint_scenarios",
     "penalize_and_weight_iv_surfaces",
     "penalize_and_weight_iv_surfaces_torch",
     "penalize_iv_surfaces",
+    "relative_entropy",
+    "smoothness_penalty",
+    "smoothness_penalty_moneyness",
+    "smoothness_penalty_tau",
     "volgan_exponential_weights",
     "volgan_exponential_weights_torch",
     "weight_scenarios_from_penalties",
