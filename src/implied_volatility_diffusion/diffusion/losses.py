@@ -34,7 +34,6 @@ def _arbitrage_weights(scheduler: VPNoiseScheduler, t: torch.Tensor, schedule: A
         return torch.clamp(1.0 - t.float() / T_max, min=0.0)
     if schedule == "constant":
         return torch.ones_like(alpha_bar)
-    raise ValueError(f"unknown arbitrage schedule: {schedule}")
 
 
 def _dirichlet_energy_index_mean_per_sample(iv: torch.Tensor) -> torch.Tensor:
@@ -106,14 +105,14 @@ class DiffusionLoss(nn.Module):
         if device is None:
             device = scheduler.alpha_bar.device
         if self.config.timestep_sampling == "uniform":
-            return torch.randint(
+            t = torch.randint(
                 0,
                 scheduler.timesteps,
                 (batch_size,),
-                device=device,
                 dtype=torch.long,
                 generator=generator,
             )
+            return t.to(device)
         if self.config.timestep_sampling == "lognormal":
             return _sample_timesteps_lognormal(
                 batch_size,
@@ -236,7 +235,7 @@ def _sample_timesteps_lognormal(
     generator: torch.Generator | None = None,
 ) -> torch.Tensor:
     """Map lognormal draws on ``(1 - alpha_bar)`` to discrete VP timesteps."""
-    z = torch.randn(batch_size, device=device, generator=generator)
+    z = torch.randn(batch_size, generator=generator).to(device)
     noise_var = torch.exp(z * sigma + mu)
     one_minus_ab = 1.0 - scheduler.alpha_bar.to(device=device)
     lo = one_minus_ab[0]

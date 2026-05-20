@@ -9,8 +9,7 @@ import numpy as np
 class ModelCallPricer(Protocol):
     """Scalar (strike, tau) -> discounted call price. Kept for legacy hooks."""
 
-    def __call__(self, strike: float, tau: float) -> float:
-        ...
+    def __call__(self, strike: float, tau: float) -> float: ...
 
 
 @runtime_checkable
@@ -27,8 +26,7 @@ class ImpliedVolInverter(Protocol):
         *,
         dividend_yield: float = 0.0,
         **kwargs: Any,
-    ) -> float:
-        ...
+    ) -> float: ...
 
 
 @runtime_checkable
